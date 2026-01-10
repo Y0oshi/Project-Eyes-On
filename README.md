@@ -27,20 +27,22 @@
 -   Pip
 
 ### 🍎 macOS / 🐧 Linux
+### 🍎 macOS / 🐧 Linux
 1.   **Clone the Repository**:
-    ```bash
-    git clone https://github.com/Y0oshi/Project-Eyes-On.git && cd Project-Eyes-On
+    ```
+    git clone https://github.com/Y0oshi/Project-Eyes-On.git
+    cd Project-Eyes-On
     ```
 
 2.  **Install Global Command**:
     This script installs dependencies and creates the `eyeson` command.
-    ```bash
+    ```
     chmod +x install.sh
     sudo ./install.sh
     ```
 
 3.  **Run**:
-    ```bash
+    ```
     sudo eyeson
     ```
 
