@@ -29,8 +29,7 @@
 ### 🍎 macOS / 🐧 Linux
 1.   **Clone the Repository**:
     ```bash
-    git clone https://github.com/Y0oshi/Project-Eyes-On.git
-    cd Project-Eyes-On
+    git clone https://github.com/Y0oshi/Project-Eyes-On.git && cd Project-Eyes-On
     ```
 
 2.  **Install Global Command**:
