@@ -1,44 +1,63 @@
-# Falcon Eyes v3.0 (Global Surveillance)
+# Project Eyes On v3.0 (Global Surveillance)
 **Coded by: Y0oshi (IG: @rde0)**
 
 > "The unified intelligence tool for mass IP camera scanning."
 
-![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue)
+![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License](https://img.shields.io/badge/License-MIT-green)
+
+![Screenshot](screenshot.png)
 
 ## Overview
-**Falcon Eyes** is a hyper-fast, multi-threaded surveillance tool designed to locate open IP cameras across the globe. It combines two powerful engines:
+**Project Eyes On** is a hyper-fast, multi-threaded surveillance tool designed to locate open IP cameras across the globe. It combines two powerful engines:
 1.  **Directory Scraper**: Harvests feeds from Insecam.
 2.  **Deep Web Dorking**: Uses Google & Yahoo search dorks to find hidden cameras not listed in public directories.
 
 ## Features
 -   **Unified Intelligence**: Access both scanning engines with a single `/scan` command.
 -   **Anti-Blocking System**: automatically switches to **Yahoo Search** if Google blocks requests, ensuring zero downtime.
--   **Mass Speed**: Running on **100 threads** for parsing and verification.
+-   **Hyper-Speed**: Unlocked threads (100x workers) for instant parsing and verification.
 -   **Zero-Wait**: Optimization algorithms remove artificial delays for maximum throughput.
 -   **Country Targeting**: Target specific regions (e.g., `/country US`, `/country RU`).
 -   **Stealth Mode**: Emulates real browser traffic to bypass firewalls.
 
 ## Installation
 
-1.  **Clone the Repository**:
+### Prerequisites
+-   Python 3.x
+-   Pip
+
+### 🍎 macOS / 🐧 Linux
+1.   **Clone the Repository**:
     ```bash
-    git clone https://github.com/your-repo/falcon-eyes.git
-    cd falcon-eyes
+    git clone https://github.com/your-username/project-eyes-on.git
+    cd project-eyes-on
     ```
 
-2.  **Run Installer (Root Required)**:
-    This sets up the global command `eyeson`.
+2.  **Install Global Command**:
+    This script installs dependencies and creates the `eyeson` command.
     ```bash
     chmod +x install.sh
     sudo ./install.sh
     ```
 
-## Usage
+3.  **Run**:
+    ```bash
+    sudo eyeson
+    ```
 
-Run the tool from anywhere in your terminal:
-```bash
-sudo eyeson
-```
+### 🪟 Windows
+1.  **Clone or Download**: Download the Repo ZIP and extract it.
+2.  **Install Dependencies**:
+    Open PowerShell or CMD in the folder:
+    ```cmd
+    pip install -r requirements.txt
+    ```
+3.  **Run**:
+    ```cmd
+    python eyes.py
+    ```
+
+## Usage
 
 ### Commands
 | Command | Description | Example |

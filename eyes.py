@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ----------------------------------------------------------------------------------
 # Coded by: Y0oshi (IG: @rde0)
-# Project: Falcon Eyes
+# Project: Project Eyes On
 # Description: Custom surveillance tool for scanning public IP cameras.
 # ----------------------------------------------------------------------------------
 
