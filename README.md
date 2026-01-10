@@ -46,16 +46,22 @@ sudo eyeson
 ```
 
 ### 🪟 Windows
-1.  **Clone or Download**: Download the Repo ZIP and extract it.
-2.  **Install Dependencies**:
-    Open PowerShell or CMD in the folder:
-    ```cmd
-    pip install -r requirements.txt
-    ```
-3.  **Run**:
-    ```cmd
-    python eyes.py
-    ```
+1. **Clone the Repository**:
+```
+git clone https://github.com/Y0oshi/Project-Eyes-On.git
+cd Project-Eyes-On
+```
+
+2. **Automated Install**:
+Just double-click `install.bat` or run:
+```
+install.bat
+```
+
+3. **Run**:
+```
+eyeson
+```
 
 ## Usage
 
