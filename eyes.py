@@ -169,29 +169,75 @@ class DorkScraper:
         'inurl:axis-cgi/jpg',
         'inurl:axis-cgi/mjpg',
         'intitle:"AXIS 240 Camera Server"',
+        'inurl:"/view/view.shtml?id="',
+        'intitle:"Axis 2400 Video Server"',
         # --- Hikvision ---
         'intitle:"Hikvision Web Cameras"',
         'inurl:"/doc/page/login.asp" intext:"Hikvision"',
         'inurl:"/login.asp" intext:"Hikvision"',
+        'intitle:"Hikvision" inurl:"login.asp"',
         # --- Mobotix ---
         'inurl:"/cgi-bin/guestimage.html"',
         'inurl:"/control/faststream.jpg"',
+        'intitle:"MOBOTIX" inurl:"/control/userimage.html"',
         # --- Foscam ---
         'intitle:"Foscam" inurl:"login.htm"',
         'inurl:"/videostream.cgi?user="',
+        'inurl:"/livestream.cgi?user="',
         # --- Panasonic ---
         'inurl:"/CgiStart?page=Single"',
         'intitle:"WVC80N"',
-        # --- Generic / MJPEG ---
+        'intitle:"Panasonic Network Camera"',
+        'inurl:"/nphMotionJpeg?Resolution="',
+        # --- D-Link ---
+        'intitle:"D-Link" inurl:"/video.htm"',
+        'inurl:"/mjpg/video.cgi" intitle:"D-Link"',
+        'intitle:"D-Link DCS-"',
+        # --- Linksys ---
+        'intitle:"Linksys Viewer - Login"',
+        'inurl:"/img/video.mjpeg" intitle:"Linksys"',
+        # --- Sony ---
+        'intitle:"sony network camera snc-pl"',
+        'intitle:"Sony" inurl:"/home/homeJ.html"',
+        # --- Toshiba ---
+        'intitle:"Toshiba Network Camera" user login',
+        'inurl:"/user/index.html" intitle:"Toshiba"',
+        # --- Vivotek ---
+        'inurl:"/cgi-bin/viewer/video.jpg"',
+        'intitle:"Vivotek" inurl:"/setup/index.html"',
+        # --- WebcamXP / 7 ---
+        'intitle:"webcamXP- 5"',
+        'intitle:"webcam 7" inurl:"/gallery.html"',
+        'inurl:top.htm inurl:currenttime',
+        # --- MJPEG / Generic Streams ---
         'inurl:"/mjpg/video.mjpg"',
         'inurl:"/mjpg/video.cgi"',
+        'inurl:"/video.mjpg"',
+        'inurl:"/videostream.cgi"',
+        'inurl:"/mjpg/main.cgi"',
+        'inurl:"/cam_1.jpg"',
+        'inurl:"/live.htm"',
+        'inurl:"/live/index.html"',
+        'inurl:"/view/viewer_index.shtml"',
+        'inurl:"/cgi-bin/video.jpg"',
+        # --- General Titles ---
         'intitle:"Live View" inurl:"index.html"',
         'intitle:"Network Camera NetworkCamera"',
-        'inurl:top.htm inurl:currenttime',
         'intitle:"ip camera" "view"',
-        'intitle:"webcamXP- 5"',
-        'inurl:"/cam_1.jpg"',
-        'inurl:"/live.htm"'
+        'intitle:"Network Camera" inurl:"/login.html"',
+        'intitle:"Webcam" inurl:WebCam.htm',
+        'intitle:"NetCam Live Image"',
+        'intitle:"i-Catcher Console"',
+        'intitle:"EvoCam" inurl:"webcam.html"',
+        'intitle:"Live View" inurl:"/cgi-bin/"',
+        'intitle:"Mega-Pixel IP Camera"',
+        'intext:"Powered by WebcamXP"',
+        # --- Specific/Obscure ---
+        'inurl:"/guest/index.html" intitle:"Network Camera"',
+        'intitle:"Yawcam" inurl:8081',
+        'intitle:"Active Webcam Page"',
+        'inurl:"/monitor/bfeed"',
+        'intitle:"Intellinet" inurl:"/login.html"'
     ]
 
     def search_yahoo(self, query, limit=50):
