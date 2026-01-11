@@ -162,15 +162,36 @@ class InsecamScraper:
 class DorkScraper:
     # google/yahoo dorking logic
     DORKS = [
+        # --- Axis ---
         'inurl:"/view/index.shtml"',
         'inurl:"/view/view.shtml"',
         'intitle:"Live View / - AXIS"',
+        'inurl:axis-cgi/jpg',
+        'inurl:axis-cgi/mjpg',
+        'intitle:"AXIS 240 Camera Server"',
+        # --- Hikvision ---
+        'intitle:"Hikvision Web Cameras"',
+        'inurl:"/doc/page/login.asp" intext:"Hikvision"',
+        'inurl:"/login.asp" intext:"Hikvision"',
+        # --- Mobotix ---
+        'inurl:"/cgi-bin/guestimage.html"',
+        'inurl:"/control/faststream.jpg"',
+        # --- Foscam ---
+        'intitle:"Foscam" inurl:"login.htm"',
+        'inurl:"/videostream.cgi?user="',
+        # --- Panasonic ---
         'inurl:"/CgiStart?page=Single"',
         'intitle:"WVC80N"',
+        # --- Generic / MJPEG ---
+        'inurl:"/mjpg/video.mjpg"',
+        'inurl:"/mjpg/video.cgi"',
+        'intitle:"Live View" inurl:"index.html"',
         'intitle:"Network Camera NetworkCamera"',
         'inurl:top.htm inurl:currenttime',
         'intitle:"ip camera" "view"',
-        'inurl:"/mjpg/video.mjpg"'
+        'intitle:"webcamXP- 5"',
+        'inurl:"/cam_1.jpg"',
+        'inurl:"/live.htm"'
     ]
 
     def search_yahoo(self, query, limit=50):
