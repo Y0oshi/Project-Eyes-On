@@ -471,10 +471,15 @@ def run_scan(country=None, pages=3, mode='DORK'):
         json.dump(FOUND_CAMS, f, indent=4)
     print(f"{Fore.BLUE}[*] Results saved to {filename}")
 
+def resize_terminal(rows=40, cols=125):
+    """Resize the terminal window to fit content."""
+    sys.stdout.write(f"\x1b[8;{rows};{cols}t")
+
 def main():
     """Main application entry point."""
     global FILTER_MODE
     
+    resize_terminal()
     print_banner()
     
     print(f"\n{Fore.WHITE}Commands:")
