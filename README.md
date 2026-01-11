@@ -76,7 +76,7 @@ eyeson.bat
 ## Disclaimer
 This tool is for **educational purposes and security auditing only**. The author (Y0oshi) is not responsible for any misuse of this software.
 
-> **Notice to Camera Owners**: If your device is found by this tool, it is **not the developer's fault**. It means your stream is public. **Don't be dumb—put a password on your camera.**
+> **Notice to Camera Owners**: If your device is found by this tool, it is **not the developer's fault**. It means your stream is public. **Don't be dumb put a password on your camera.**
 
 ---
 **Follow on Instagram: @rde0**
