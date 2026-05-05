@@ -1,5 +1,5 @@
-# Project Eyes On v3.0 (Global Surveillance)
-**Originally "Coded" by: Y0oshi (IG: @rde0) / AI**
+# UNSLOPPED FROM AI - Project Eyes On v3.0 (Global Surveillance)
+**Originally "Coded" by: Y0oshi (AI CHATBOT) (IG: @rde0)**
 
 ![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
