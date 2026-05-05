@@ -45,11 +45,3 @@ python3 eyes.py
 | `/country [Code]` | Target Logic (e.g., US, JP, RU) | `/country US` |
 | `/mode [Type]` | Filter (ALL, STREAM, SNAPSHOT) | `/mode STREAM` |
 | `/exit` | Quit Tool | `/exit` |
-
-## Disclaimer
-This tool is for **educational purposes and security auditing only**. The author (Y0oshi) is not responsible for any misuse of this software.
-
-> **Notice to Camera Owners**: If your device is found by this tool, it is **not the developer's fault**. It means your stream is public. **Don't be dumb put a password on your camera.**
-
----
-**Follow on Instagram: @rde0**
