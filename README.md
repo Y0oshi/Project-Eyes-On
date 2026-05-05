@@ -1,6 +1,8 @@
 # Project Eyes On v3.0 (Global Surveillance)
 **Coded by: Y0oshi (IG: @rde0)**
 
+> UNSLOPPED-AI port of this scanner
+
 > "The unified intelligence tool for mass IP camera scanning."
 
 ![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License](https://img.shields.io/badge/License-MIT-green)
