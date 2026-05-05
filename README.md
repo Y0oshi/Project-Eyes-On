@@ -8,7 +8,7 @@
 1.  **Directory Scraper**: Harvests feeds from Insecam.
 2.  **Deep Web Dorking**: Uses Google & Yahoo search dorks to find hidden cameras not listed in public directories.
 
-## What it uses:
+## Features:
 -   **Parallel Engine**: Queries **Yahoo** and **Startpage** simultaneously for maximum speed and results.
 -   **GeoIP Enrichment**: Automatically resolves camera IP locations to **City, Country** (e.g., "New York, United States").
 -   **Smart Deduplication**: Merges results from multiple engines to ensure unique feeds.
