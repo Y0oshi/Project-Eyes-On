@@ -1,16 +1,14 @@
-# UNSLOPPED FROM AI - Project Eyes On v3.0 (Global Surveillance)
-**Originally "Coded" by: Y0oshi (AI CHATBOT), edited by Auski to actually be somewhat usable**
-
-![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License](https://img.shields.io/badge/License-MIT-green)
+# Wired Eyes Search v1.0 (Global Surveillance)
+**Maintained by Auski**
 
 ![Screenshot](screenshot.png)
 
 ## Overview
-**Project Eyes On** is a hyper-fast, multi-threaded surveillance tool designed to locate open IP cameras across the globe. It combines two powerful engines:
+**Wired Eyes Search** is a multi-threaded surveillance tool designed to locate open IP cameras. It combines two options:
 1.  **Directory Scraper**: Harvests feeds from Insecam.
 2.  **Deep Web Dorking**: Uses Google & Yahoo search dorks to find hidden cameras not listed in public directories.
 
-## Features
+## What it uses:
 -   **Parallel Engine**: Queries **Yahoo** and **Startpage** simultaneously for maximum speed and results.
 -   **GeoIP Enrichment**: Automatically resolves camera IP locations to **City, Country** (e.g., "New York, United States").
 -   **Smart Deduplication**: Merges results from multiple engines to ensure unique feeds.
@@ -22,15 +20,33 @@
 -   Python 3.x
 -   Pip
 
+## Libraries required by pip
+requests
+beautifulsoup4
+colorama
+
 ### macOS / Linux / Windows
-1. **Clone the Repository**:
+1. **Download Libraries using pip**
+```
+pip install beautifulsoup4
+pip install requests
+pip install colorama
+```
+
+2. **Clone the Repository**:
 ```
 git clone https://github.com/Y0oshi/Project-Eyes-On.git
 cd Project-Eyes-On
+```
+
+3. **Run the file in python**
+
+```
 python eyes.py
 ```
 
 or
+
 ```
 python3 eyes.py
 ```
@@ -40,8 +56,14 @@ python3 eyes.py
 ### Commands
 | Command | Description | Example |
 | :--- | :--- | :--- |
-| `/scrape [Pages]` | Scrape Insecam (Public Directory) | `/scrape 5` |
-| `/scan [Pages]` | Google Dork Search (Deep Web) | `/scan 50` |
-| `/country [Code]` | Target Logic (e.g., US, JP, RU) | `/country US` |
-| `/mode [Type]` | Filter (ALL, STREAM, SNAPSHOT) | `/mode STREAM` |
-| `/exit` | Quit Tool | `/exit` |
+| `help` | list commands | `help` |
+| `clear` | clears the screen | `clear` |
+| `pages` | set the total pages | `pages 50` |
+| `country [code/list]` | choose a country to target (e.g., US, JP, RU) | `country US` |
+| `agent [type/list]` | set the agent the scraper uses | `agent random` |
+| `mode [type]` | modes: dork, insecam | `mode dork` |
+| `type [type]` | types: stream, snapshot | `type stream` |
+| `filter [type]` | filter through the camera types | `filter all` |
+| `log [type]` | writes results into a file, true/false | `log true` |
+| `scan` | starts the scan | `scan` |
+| `exit` | quit | `exit` |
