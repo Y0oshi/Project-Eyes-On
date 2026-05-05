@@ -21,9 +21,9 @@
 -   Pip
 
 ## Libraries required by pip
-requests
-beautifulsoup4
-colorama
+-  requests
+-  beautifulsoup4
+-  colorama
 
 ### macOS / Linux / Windows
 1. **Download Libraries using pip**
