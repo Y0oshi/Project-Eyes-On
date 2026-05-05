@@ -1,9 +1,5 @@
 # Project Eyes On v3.0 (Global Surveillance)
-**Coded by: Y0oshi (IG: @rde0)**
-
-> UNSLOPPED-AI port of this scanner
-
-> "The unified intelligence tool for mass IP camera scanning."
+**Originally "Coded" by: Y0oshi (IG: @rde0) / AI**
 
 ![Banner](https://img.shields.io/badge/Status-Active-brightgreen) ![Python](https://img.shields.io/badge/Python-3.x-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -22,8 +18,6 @@
 -   **Country Targeting**: Target specific regions (e.g., `/country US`, `/country RU`).
 -   **Live Verification**: Automatically detects stream types (MJPEG, JPEG, Video).
 
-## Installation
-
 ### Prerequisites
 -   Python 3.x
 -   Pip
@@ -33,36 +27,7 @@
 ```
 git clone https://github.com/Y0oshi/Project-Eyes-On.git
 cd Project-Eyes-On
-```
-
-2. **Install Global Command**:
-The installer script sets up dependencies and creates the `eyeson` command.
-```
-chmod +x install.sh
-sudo ./install.sh
-```
-
-3. **Run**:
-```
-sudo eyeson
-```
-
-### Windows
-1. **Clone the Repository**:
-```
-git clone https://github.com/Y0oshi/Project-Eyes-On.git
-cd Project-Eyes-On
-```
-
-2. **Automated Install**:
-Just double-click `install.bat` or run:
-```
-install.bat
-```
-
-3. **Run**:
-```
-eyeson.bat
+python eyes.py
 ```
 
 ## Usage
