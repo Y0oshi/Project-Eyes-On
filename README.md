@@ -22,12 +22,17 @@
 -   Python 3.x
 -   Pip
 
-### macOS / Linux
+### macOS / Linux / Windows
 1. **Clone the Repository**:
 ```
 git clone https://github.com/Y0oshi/Project-Eyes-On.git
 cd Project-Eyes-On
 python eyes.py
+```
+
+or
+```
+python3 eyes.py
 ```
 
 ## Usage
