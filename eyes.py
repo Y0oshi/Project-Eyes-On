@@ -14,7 +14,6 @@ A surveillance tool for discovering publicly accessible IP cameras using the opt
 """
 
 import requests
-import ipaddress
 import threading
 import time
 import random
