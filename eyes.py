@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  OPERATION EYES ON v3.0                                                       ║
-║  Public IP Camera Reconnaissance Tool                                        ║
-║  Coded by: Y0oshi | IG: @rde0                                                 ║
+║  Wired Eyes Search v1.0                                                      ║
+║  Public IP Camera Finder/Scraper Tool                                        ║
+║  Forked by: auski                                                            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-A surveillance tool for discovering publicly accessible IP cameras using:
+A surveillance tool for discovering publicly accessible IP cameras using the options:
   - Insecam directory scraping
   - Multi-engine dorking (Yahoo + Startpage)
   - GeoIP location enrichment
   - Live stream verification
-
-For educational and authorized security research purposes only.
 """
 
 import requests
+import ipaddress
+import threading
 import time
 import random
 import json
 import sys
+import os
 import concurrent.futures
 from urllib.parse import urlparse, unquote
 from bs4 import BeautifulSoup
@@ -31,315 +32,359 @@ from colorama import init, Fore, Style
 
 init(autoreset=True)
 
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.2 Safari/605.1.15",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
-]
+#random is seperate
+USER_AGENTS =  {
+    "WINDOWS_CHROME": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+    "MAC_SAFARI": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.2 Safari/605.1.15",
+    "WINDOWS_FIREFOX": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "LINUX_CHROME": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
+    "IPHONE_SAFARI": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+}
 
-INSECAM_BASE = "http://www.insecam.org/en"
+INSECAM_URL = "http://www.insecam.org/en"
 
-# Camera discovery dorks - organized by manufacturer
-CAMERA_DORKS = [
-    # Axis Communications
-    'inurl:"/view/index.shtml"',
-    'inurl:"/view/view.shtml"',
-    'intitle:"Live View / - AXIS"',
-    'inurl:axis-cgi/jpg',
-    'inurl:axis-cgi/mjpg',
-    'intitle:"AXIS 240 Camera Server"',
-    'intitle:"Live View / - AXIS 206M"',
-    'intitle:"Live View / - AXIS 210"',
-    'intitle:"Live View / - AXIS 211"',
-    'intitle:"Live View / - AXIS 213 PTZ"',
-    'intitle:"Live View / - AXIS 206W"',
-    'intitle:"Live View / - AXIS 210W"',
-    'inurl:indexFrame.shtml Axis',
-    'intitle:"Axis 2400 Video Server"',
-    'inurl:/view/indexFrame.shtml',
-    'intitle:"live view" intitle:axis',
-    'intitle:axis intitle:"video server"',
-    'tilt intitle:"Live View / - AXIS" | inurl:view/view.shtml',
-    'intitle:"AXIS 240 Camera Server" intext:"server push" -help',
-    'intitle:"Live View /- AXIS" |inurl:view/view.shtml OR inurl:view/indexFrame.shtml |intitle:"MJPG Live Demo" |intext:"Select preset position"',
-    'allintitle:Axis 2.10 OR 2.12 OR 2.30 OR 2.31 OR 2.32 OR 2.33 OR 2.34 OR 2.40 OR 2.42 OR 2.43 "Network Camera"',
-    'intitle:"Live View/ — AXIS"',
-    'intitle:"Live View/ — AX|S"',
-    'intitle:"Live View / - AXIS 706W"',
-    'AXIS Camera exploit',
-    
-    # Hikvision
-    'intitle:"Hikvision Web Cameras"',
-    'inurl:"/doc/page/login.asp" intext:"Hikvision"',
-    'intitle:"Hikvision" inurl:"login.asp"',
-    'inurl:"/onvif-http/snapshot?auth="',
-    'product:"Hikvision IP Camera"',
-    
-    # Mobotix
-    'inurl:"/cgi-bin/guestimage.html"',
-    'inurl:"/control/faststream.jpg"',
-    'intitle:"MOBOTIX" inurl:"/control/userimage.html"',
-    '(intitle:MOBOTIX intitle:PDAS) | (intitle:MOBOTIX intitle:Seiten)',
-    'inurl:/pda/index.html +camera',
-    
-    # Foscam
-    'intitle:"Foscam" inurl:"login.htm"',
-    'inurl:"/videostream.cgi?user="',
-    'intitle:"Foscam" inurl:"/live.htm"',
-    
-    # Panasonic
-    'inurl:"/CgiStart?page=Single"',
-    'intitle:"Panasonic Network Camera"',
-    'inurl:"/nphMotionJpeg?Resolution="',
-    'inurl:/config/cam_portal.cgi "Panasonic"',
-    'inurl:"/ViewerFrame?Mode="',
-    'inurl:"/ViewerFrame?Mode=Motion"',
-    'intitle:"Panasonic" inurl:"ViewerFrame?Mode="',
-    'inurl:"MultiCameraFrame?Mode=Motion"',
-    'inurl:"WJ-NTI 04 Main Page"',
-    'inurl:/live.htm intext:"M-JPEG"|"System Log"|"Camera-1"|"View Control"',
-    
-    # D-Link
-    'intitle:"D-Link" inurl:"/video.htm"',
-    'inurl:"/mjpg/video.cgi" intitle:"D-Link"',
-    'intitle:"D-Link DCS-"',
-    'inurl:"/eng/admin/adv_audiovideo.cgi"',
-    
-    # Sony
-    'intitle:"sony network camera snc-pl"',
-    'intitle:"Sony" inurl:"/home/homeJ.html"',
-    'intitle:"SNC-RZ30" -demo',
-    'intitle:"sony network camera snc-ml"',
-    'inurl:"/image/webcam.jpg" intitle:"Sony"',
-    'intitle:snc-220 inurl:home/',
-    'intitle:snc-cs3 inurl:home/',
-    'intitle:snc-r230 inurl:home/',
-    
-    # Canon
-    'intitle:"Network Camera VB-M600"',
-    'inurl:"/sample/LvAppl/lvappl.htm"',
-    'inurl:"lvappl.htm"',
-    'inurl:"/view.shtml" "camera"',
-    
-    # Vivotek
-    'server:VVTK-HTTP-Server',
-    'inurl:"/cgi-bin/viewer/video.jpg"',
-    
-    # WebcamXP / Webcam 7
-    'intitle:"webcamXP 5"',
-    'intitle:"webcam 7"',
-    'intext:"powered by webcamXP 5"',
-    'inurl:"/cam_1.jpg" intitle:"webcamXP"',
-    'intitle:"webcam 7" inurl:"/gallery.html"',
-    'intitle:"webcamXP 5" -download',
-    'intitle:"webcam 7" inurl:"8080" -intext:"8080"',
-    'intitle:"webcamXP 5" inurl:8080 \'Live\'',
-    'intitle:"WEBCAM 7 " -inurl:/admin.html',
-    
-    # Dahua
-    'intitle:"Dahua IP Camera" inurl:/login',
-    'inurl:dahua inurl:view/view.shtml',
-    'intitle:"Dahua" inurl:"/cgi-bin/rpc.cgi?action=login"',
-    'intext:"Dahua" intitle:"Network Camera" inurl:main.cgi',
+data_map = {
+    "colors": ["red", "green", "blue"],
+    "numbers": ["one", "two", "three"]
+}
 
-    # Reolink
-    'intitle:"Reolink" inurl:view',
-    'intitle:"Reolink Camera" inurl:login',
-    'intitle:"Reolink" inurl:snapshot.cgi',
-    'intitle:"Reolink" inurl:/cgi-bin/',
-    'inurl:"/Reolink" intitle:"Live" -shop -store',
+CAMERA_DORKS = {
+    "AXIS":
+    [
+        'inurl:"/view/index.shtml"',
+        'inurl:"/view/view.shtml"',
+        'intitle:"Live View / - AXIS"',
+        'inurl:axis-cgi/jpg',
+        'inurl:axis-cgi/mjpg',
+        'intitle:"AXIS 240 Camera Server"',
+        'intitle:"Live View / - AXIS 206M"',
+        'intitle:"Live View / - AXIS 210"',
+        'intitle:"Live View / - AXIS 211"',
+        'intitle:"Live View / - AXIS 213 PTZ"',
+        'intitle:"Live View / - AXIS 206W"',
+        'intitle:"Live View / - AXIS 210W"',
+        'inurl:indexFrame.shtml Axis',
+        'intitle:"Axis 2400 Video Server"',
+        'inurl:/view/indexFrame.shtml',
+        'intitle:"live view" intitle:axis',
+        'intitle:axis intitle:"video server"',
+        'tilt intitle:"Live View / - AXIS" | inurl:view/view.shtml',
+        'intitle:"AXIS 240 Camera Server" intext:"server push" -help',
+        'intitle:"Live View /- AXIS" |inurl:view/view.shtml OR inurl:view/indexFrame.shtml |intitle:"MJPG Live Demo" |intext:"Select preset position"',
+        'allintitle:Axis 2.10 OR 2.12 OR 2.30 OR 2.31 OR 2.32 OR 2.33 OR 2.34 OR 2.40 OR 2.42 OR 2.43 "Network Camera"',
+        'intitle:"Live View/ — AXIS"',
+        'intitle:"Live View/ — AX|S"',
+        'intitle:"Live View / - AXIS 706W"',
+        'AXIS Camera exploit'
+    ],
 
-    # Ubiquiti / UniFi
-    'intitle:"UniFi Video" inurl:login',
-    'intitle:"UniFi Protect" inurl:7443',
-    'inurl:snap.jpg intext:"ubiquiti"',
-    'intitle:"UniFi Protect" inurl:/protect/live',
-    'inurl:/cc/view.html intext:"unifi"',
+    "HIKVISION":
+    [
+        'intitle:"Hikvision Web Cameras"',
+        'inurl:"/doc/page/login.asp" intext:"Hikvision"',
+        'intitle:"Hikvision" inurl:"login.asp"',
+        'inurl:"/onvif-http/snapshot?auth="',
+        'product:"Hikvision IP Camera"'
+    ],
 
-    # Blue Iris
-    'intitle:"Blue Iris Login"',
-    'intitle:"Blue Iris Remote View"',
-    
-    # Android IP Webcam
-    'inurl:"videomgr.html"',
-    'intitle:"Android IP Webcam"',
-    
-    # Generic CGI / Directory
-    'inurl:"/cgi-bin/live.cgi"',
-    'inurl:"/cgi-bin/stream.cgi"',
-    'inurl:"/cgi-bin/snapshot.cgi"',
-    'inurl:"/cgi-bin/camctrl.cgi"',
-    'intitle:"Index of /DCIM"',
-    'inurl:"logo.bmp" intitle:"Webcam"',
-    
-    # Broad / Catch-all
-    'intitle:"Live View" inurl:"login.cgi"',
-    'intitle:"IP Camera" inurl:"login.html"',
-    'inurl:"/view/index.shtml" -inurl:axis',
-    'inurl:"/view/view.shtml" -inurl:axis',
-    'inurl:"/main.cgi?next_file=main_fs.htm"',
+    "MOBOTIX":
+    [
+        'inurl:"/cgi-bin/guestimage.html"',
+        'inurl:"/control/faststream.jpg"',
+        'intitle:"MOBOTIX" inurl:"/control/userimage.html"',
+        '(intitle:MOBOTIX intitle:PDAS) | (intitle:MOBOTIX intitle:Seiten)',
+        'inurl:/pda/index.html +camera'
+    ],
 
-    # GeoVision
-    'intitle:"GeoVision WebCam Server" inurl:/WebCam',
-    'intitle:"GeoVision" inurl:/login.htm',
-    'inurl:/geovision/ login',
-    'intitle:"GeoVision MultiCam Surveillance System" live view',
-    'inurl:geovision filetype:txt "password"',
+    "FORSCAM":
+    [
+        'intitle:"Foscam" inurl:"login.htm"',
+        'inurl:"/videostream.cgi?user="',
+        'intitle:"Foscam" inurl:"/live.htm"'
+    ],
 
-    # Avigilon
-    'intitle:"Avigilon Control Center" inurl:/login',
-    'inurl:/avigilon/viewer',
-    'intitle:"Avigilon" intext:"live video"',
-    'inurl:/avigilon/webclient/',
-    
-    # Vivotek
-    'intitle:"Vivotek Camera" inurl:/viewer',
-    'intitle:"Vivotek" intext:"live view"',
-    'intitle:"Vivotek" inurl:/cgi-bin/',
-    'inurl:/vivotek/ rtsp',
-    
-    # ZoneMinder
-    'intitle:"ZoneMinder" inurl:/zm/index.php',
-    'intext:"ZoneMinder" inurl:view=event',
-    'inurl:/zoneminder/cgi-bin/nph-zms',
-    
-    # Legacy Webcam 7 / XP Ports
-    'intitle:"webcam 7" inurl::8080',
-    'intitle:"webcam 7" inurl::8081',
-    'intitle:"webcam 7" inurl::8000',
-    'intitle:"webcamXP 5" inurl::8080',
-    
-    # Shodan-Adapted / Misc
-    'product:"Hikvision IP Camera"',
-    'title:"IPCam Client"',
-    'http.title:"WEB VIEW" dahua',
-    'intitle:"Blue Iris Login"',
-    
-    # Toshiba
-    'intitle:"Toshiba Network Camera"',
-    'inurl:"/user/index.html" intitle:"Toshiba"',
-    'intitle:"Toshiba Network Camera" user Login',
-    
-    # Generic / Other
-    'inurl:"/mjpg/video.mjpg"',
-    'inurl:"/axis-cgi/mjpg"',
-    'inurl:"view/index.shtml"',
-    'inurl:"/view/view.shtml"',
-    'inurl:"/c/version.cgi"',
-    'inurl:"/cgi-bin/mjpg/video.cgi"',
-    'inurl:"/cgi-bin/video.jpg"',
-    'inurl:"/live/index.html"',
-    'inurl:"/live/view.html"',
-    'inurl:"/mjpg/video.cgi?camera"',
-    'inurl:"/mjpg/video.cgi?channel"',
-    'inurl:"/nph-mjpeg.cgi"',
-    'inurl:"/out.jpg"',
-    'inurl:"/snapshot.cgi?"',
-    'inurl:"/stream/video.mjpeg"',
-    'inurl:"/video.cgi"',
-    'inurl:"/video.mjpg"',
-    'inurl:"/view/index.shtml" intitle:"Network Camera"',
-    'inurl:"CgiStart?page="',
-    'inurl:camctrl.cgi',
-    'intitle:"IP CAMERA Viewer"',
-    'intitle:"Live View / - AXIS"',
-    'intitle:"NetCam Live Image"',
-    'intitle:"WJ-HD150" inurl:"/login.html"',
-    'intitle:"WJ-ND200" inurl:"/login.html"',
-    'intitle:"i-Catcher Console - Web Monitor"',
-    'intitle:"netcam live image" (disconnected)',
-    'inurl:"/gallery.html" intitle:"IP Camera"',
-    'inurl:":8081" intitle:"IP Camera"',
-    'inurl:":8080" intitle:"IP Camera"',
-    'inurl:"/guestimage.html"',
-    'inurl:"/live.htm" intext:"M-JPEG"',
-    'inurl:"/monitor/bflowmo.jpg"',
-    'inurl:"/multiview.htm"',
-    'inurl:"/view.shtml" "Network Camera"',
-    'inurl:"/viewer/live.shtml"',
-    'inurl:"/webapp/live/show.html"',
-    'inurl:"/webcam.html"',
-    'inurl:"camera-cgi/admin/param.cgi"',
-    'inurl:"cgi-bin/guestimage.html"',
-    'inurl:"guestimage.html" intitle:"IP Camera"',
-    'inurl:"image.jpg" intitle:"IP Camera"',
-    'inurl:"index.html" intitle:"Live View / - AXIS"',
-    'inurl:"live/cam.html"',
-    'inurl:"live/mjpeg"',
-    'inurl:"mjpg/video.mjpg" intitle:"IP Camera"',
-    'inurl:"nphMotionJpeg?Resolution="',
-    'inurl:"snapshot.jpg"',
-    'inurl:"video.mjpg"',
-    'inurl:"view/index.shtml" intitle:"Axis"',
-    'inurl:"view/view.shtml" intitle:"Axis"',
-    'inurl:User/General_home.htm',
-    'inurl:ViewerFrame?M0de=',
-    'inurl:axis-cgi/mjpg (motion-JPEG)',
-    'inurl:indexFrame.shtml',
-    'inurl:live/cam.html',
-    'inurl:top.htm inurl:currenttime',
-    'inurl:view/indexFrame.shtml',
-    'inurl:view/viewer_index.shtml',
-    'intitle:"IP CAMERA Viewer" intext:"setting |Client setting"',
-    'intitle:"Device(" AND intext:"Network Camera" AND "language:" "AND "Password"',
-    'intitle:"yawcam" inurl:":8081"',
-    'intitle:"iGuard Fingerprint Security System"',
-    'intitle:"Edr1680 remote viewer"',
-    'intitle:"NetCam Live Image" -.edu -.gov -johnny.ihackstuff.com',
-    'intitle:"INTELLINET" intitle:"IP Camera Homepage"',
-    'intitle:"WEBDVR" -inurl:product -inurl:demo',
-    'intitle:"Middle frame of Videoconference Management System" ext:htm',
-    'intitle:"--- VIDEO WEB SERVER ---" intext:"Video Web Server" "Any time & Any where" username password',
-    'intitle:HomeSeer.Web.Control | Home.Status.Events.Log',
-    'intitle:"supervisioncam protocol"',
-    'intitle:"active webcam page"',
-    'VB Viewer inurl:/viewer/live/ja/live.html',
-    'inurl:control/camerainfo',
-    'inurl:"/view/view.shtml?id="',
-    'allintitle:Edr1680 remote viewer',
-    'allintitle:EverFocus |EDSR |EDSR400 Applet',
-    'allintitle:EDR1600 login |Welcome',
-    'intitle:"BlueNet Video Viewer"',
-    '(intitle:(EyeSpyFX|OptiCamFX) "go to camera")|(inurl:servlet/DetectBrowser)',
-    'intitle:"Veo Observer XT"',
-    'inurl:shtml|pl|php|htm|asp|aspx|pDf|cfm -(intext:observer)',
-    'inurl:"/view.shtml"',
-    'inurl:"ViewerFrame?M0de=Refresh"',
-    'liveapplet',
-    'intitle:liveapplet',
-    'allintitle:"Network Camera NetworkCamera" (disconnected)',
-    'intitle:liveapplet inurl:LvAppl',
-    'intitle:"EvoCam" inurl:"webcam.html"',
-    'intitle:"Live NetSnap Cam-Server feed"',
-    'intitle:start inurl:cgistart',
-    'site:.viewnetcam.com -www.viewnetcam.com',
-    'intitle:"IP Webcam" inurl:"/greet.html"',
-    'intitle:"NetCamSC*"',
-    'intitle:"NetCamXL*"',
-    'intitle:"NetCamSC*" | intitle:"NetCamXL*" inurl:index.html',
-    '"Camera Live Image" inurl:"guestimage.html"',
-    'intitle:"webcam" inurl:login',
-    'inurl:/ViewerFrame? intitle:"Network Camera NetworkCamera"',
-    'intitle:NetworkCamera intext:"Pan / Tilt" inurl:ViewerFrame',
-    'intitle:"IP CAMERA Viewer" intext:"setting | Client setting"',
-    'intitle:"Weather Wing WS-2"',
-    
-    # Linksys
-    'intitle:"Linksys Viewer - Login" -inurl:mainFrame',
-    'inurl:"main.cgi?next_file=main_fs.htm"',
-    
-    # TP-Link
-    'intitle:"TP-LINK IP-Camera"',
-    
-    # Other / Generic Additions
-    'intitle:"netcam watcher"',
-    'intitle:"Network Camera NetworkCamera"',
-    'intitle:"Webcam" inurl:WebCam.htm',
-    'intitle:webcamxp inurl:8080',
-    'inurl:"snapshot.cgi?user="',
-]
+    "PARASONIC":
+    [
+        'intitle:"Foscam" inurl:"login.htm"',
+        'inurl:"/videostream.cgi?user="',
+        'intitle:"Foscam" inurl:"/live.htm"'
+    ],
+
+    "DLINK":
+    [
+        'intitle:"D-Link" inurl:"/video.htm"',
+        'inurl:"/mjpg/video.cgi" intitle:"D-Link"',
+        'intitle:"D-Link DCS-"',
+        'inurl:"/eng/admin/adv_audiovideo.cgi"'
+    ],
+
+    "SONY":
+    [
+        'intitle:"sony network camera snc-pl"',
+        'intitle:"Sony" inurl:"/home/homeJ.html"',
+        'intitle:"SNC-RZ30" -demo',
+        'intitle:"sony network camera snc-ml"',
+        'inurl:"/image/webcam.jpg" intitle:"Sony"',
+        'intitle:snc-220 inurl:home/',
+        'intitle:snc-cs3 inurl:home/',
+        'intitle:snc-r230 inurl:home/'
+    ],
+
+    "CANON":
+    [
+        'intitle:"Network Camera VB-M600"',
+        'inurl:"/sample/LvAppl/lvappl.htm"',
+        'inurl:"lvappl.htm"',
+        'inurl:"/view.shtml" "camera"'
+    ],
+
+    "VIVOTEK":
+    [
+        'server:VVTK-HTTP-Server',
+        'inurl:"/cgi-bin/viewer/video.jpg"'
+    ],
+
+    "WEBCAM":
+    [
+        'intitle:"webcamXP 5"',
+        'intitle:"webcam 7"',
+        'intext:"powered by webcamXP 5"',
+        'inurl:"/cam_1.jpg" intitle:"webcamXP"',
+        'intitle:"webcam 7" inurl:"/gallery.html"',
+        'intitle:"webcamXP 5" -download',
+        'intitle:"webcam 7" inurl:"8080" -intext:"8080"',
+        'intitle:"webcamXP 5" inurl:8080 \'Live\'',
+        'intitle:"WEBCAM 7 " -inurl:/admin.html',
+        'intitle:"webcam 7" inurl::8080',
+        'intitle:"webcam 7" inurl::8081',
+        'intitle:"webcam 7" inurl::8000',
+        'intitle:"webcamXP 5" inurl::8080',
+        'intitle:"Webcam" inurl:WebCam.htm',
+        'intitle:webcamxp inurl:8080'
+    ],
+
+    "DAHUA":
+    [
+        'intitle:"Dahua IP Camera" inurl:/login',
+        'inurl:dahua inurl:view/view.shtml',
+        'intitle:"Dahua" inurl:"/cgi-bin/rpc.cgi?action=login"',
+        'intext:"Dahua" intitle:"Network Camera" inurl:main.cgi'
+    ],
+
+    "REOLINK":
+    [
+        'intitle:"Reolink" inurl:view',
+        'intitle:"Reolink Camera" inurl:login',
+        'intitle:"Reolink" inurl:snapshot.cgi',
+        'intitle:"Reolink" inurl:/cgi-bin/',
+        'inurl:"/Reolink" intitle:"Live" -shop -store'
+    ],
+
+    "UNIFI":
+    [
+        'intitle:"UniFi Video" inurl:login',
+        'intitle:"UniFi Protect" inurl:7443',
+        'inurl:snap.jpg intext:"ubiquiti"',
+        'intitle:"UniFi Protect" inurl:/protect/live',
+        'inurl:/cc/view.html intext:"unifi"'
+    ],
+
+    "BLUE_IRIS":
+    [
+        'intitle:"Blue Iris Login"',
+        'intitle:"Blue Iris Remote View"'
+    ],
+
+    "ANDROID_WEBCAM":
+    [
+        'inurl:"videomgr.html"',
+        'intitle:"Android IP Webcam"'
+    ],
+
+    "CGI":
+    [
+        'inurl:"/cgi-bin/live.cgi"',
+        'inurl:"/cgi-bin/stream.cgi"',
+        'inurl:"/cgi-bin/snapshot.cgi"',
+        'inurl:"/cgi-bin/camctrl.cgi"',
+        'intitle:"Index of /DCIM"',
+        'inurl:"logo.bmp" intitle:"Webcam"',
+        'inurl:"snapshot.cgi?user="',
+        'inurl:"/axis-cgi/mjpg"'
+    ],
+
+    "GEOVISION":
+    [
+        'intitle:"GeoVision WebCam Server" inurl:/WebCam',
+        'intitle:"GeoVision" inurl:/login.htm',
+        'inurl:/geovision/ login',
+        'intitle:"GeoVision MultiCam Surveillance System" live view',
+        'inurl:geovision filetype:txt "password"'
+    ],
+
+    "AVIGILON":
+    [
+        'intitle:"Avigilon Control Center" inurl:/login',
+        'inurl:/avigilon/viewer',
+        'intitle:"Avigilon" intext:"live video"',
+        'inurl:/avigilon/webclient/'
+    ],
+
+    "VIVOTEK":
+    [
+        'intitle:"Vivotek Camera" inurl:/viewer',
+        'intitle:"Vivotek" intext:"live view"',
+        'intitle:"Vivotek" inurl:/cgi-bin/',
+        'inurl:/vivotek/ rtsp'
+    ],
+
+    "ZONEMINDER":
+    [
+        'intitle:"ZoneMinder" inurl:/zm/index.php',
+        'intext:"ZoneMinder" inurl:view=event',
+        'inurl:/zoneminder/cgi-bin/nph-zms'
+    ],
+
+    "SHODAN_SEARCH":
+    [
+        'product:"Hikvision IP Camera"',
+        'title:"IPCam Client"',
+        'http.title:"WEB VIEW" dahua',
+        'intitle:"Blue Iris Login"',
+    ],
+
+    "TOSHIBA":
+    [
+        'intitle:"Toshiba Network Camera"',
+        'inurl:"/user/index.html" intitle:"Toshiba"',
+        'intitle:"Toshiba Network Camera" user Login',
+    ],
+
+    "LINKSYS":
+    [
+        'intitle:"Linksys Viewer - Login" -inurl:mainFrame',
+        'inurl:"main.cgi?next_file=main_fs.htm"'
+    ],
+
+    "TP_LINK":
+    [
+        'intitle:"TP-LINK IP-Camera"'
+    ],
+
+    "OTHER":
+    [
+        'intitle:"Live View" inurl:"login.cgi"',
+        'intitle:"IP Camera" inurl:"login.html"',
+        'inurl:"/view/index.shtml" -inurl:axis',
+        'inurl:"/view/view.shtml" -inurl:axis',
+        'inurl:"/main.cgi?next_file=main_fs.htm"',
+        'intitle:"netcam watcher"',
+        'intitle:"Network Camera NetworkCamera"',
+        'inurl:"snapshot.cgi?user="',
+        'inurl:"/mjpg/video.mjpg"',
+        'inurl:"/axis-cgi/mjpg"',
+        'inurl:"view/index.shtml"',
+        'inurl:"/view/view.shtml"',
+        'inurl:"/c/version.cgi"',
+        'inurl:"/cgi-bin/mjpg/video.cgi"',
+        'inurl:"/cgi-bin/video.jpg"',
+        'inurl:"/live/index.html"',
+        'inurl:"/live/view.html"',
+        'inurl:"/mjpg/video.cgi?camera"',
+        'inurl:"/mjpg/video.cgi?channel"',
+        'inurl:"/nph-mjpeg.cgi"',
+        'inurl:"/out.jpg"',
+        'inurl:"/snapshot.cgi?"',
+        'inurl:"/stream/video.mjpeg"',
+        'inurl:"/video.cgi"',
+        'inurl:"/video.mjpg"',
+        'inurl:"/view/index.shtml" intitle:"Network Camera"',
+        'inurl:"CgiStart?page="',
+        'inurl:camctrl.cgi',
+        'intitle:"IP CAMERA Viewer"',
+        'intitle:"Live View / - AXIS"',
+        'intitle:"NetCam Live Image"',
+        'intitle:"WJ-HD150" inurl:"/login.html"',
+        'intitle:"WJ-ND200" inurl:"/login.html"',
+        'intitle:"i-Catcher Console - Web Monitor"',
+        'intitle:"netcam live image" (disconnected)',
+        'inurl:"/gallery.html" intitle:"IP Camera"',
+        'inurl:":8081" intitle:"IP Camera"',
+        'inurl:":8080" intitle:"IP Camera"',
+        'inurl:"/guestimage.html"',
+        'inurl:"/live.htm" intext:"M-JPEG"',
+        'inurl:"/monitor/bflowmo.jpg"',
+        'inurl:"/multiview.htm"',
+        'inurl:"/view.shtml" "Network Camera"',
+        'inurl:"/viewer/live.shtml"',
+        'inurl:"/webapp/live/show.html"',
+        'inurl:"/webcam.html"',
+        'inurl:"camera-cgi/admin/param.cgi"',
+        'inurl:"cgi-bin/guestimage.html"',
+        'inurl:"guestimage.html" intitle:"IP Camera"',
+        'inurl:"image.jpg" intitle:"IP Camera"',
+        'inurl:"index.html" intitle:"Live View / - AXIS"',
+        'inurl:"live/cam.html"',
+        'inurl:"live/mjpeg"',
+        'inurl:"mjpg/video.mjpg" intitle:"IP Camera"',
+        'inurl:"nphMotionJpeg?Resolution="',
+        'inurl:"snapshot.jpg"',
+        'inurl:"video.mjpg"',
+        'inurl:"view/index.shtml" intitle:"Axis"',
+        'inurl:"view/view.shtml" intitle:"Axis"',
+        'inurl:User/General_home.htm',
+        'inurl:ViewerFrame?M0de=',
+        'inurl:axis-cgi/mjpg (motion-JPEG)',
+        'inurl:indexFrame.shtml',
+        'inurl:live/cam.html',
+        'inurl:top.htm inurl:currenttime',
+        'inurl:view/indexFrame.shtml',
+        'inurl:view/viewer_index.shtml',
+        'intitle:"IP CAMERA Viewer" intext:"setting |Client setting"',
+        'intitle:"Device(" AND intext:"Network Camera" AND "language:" "AND "Password"',
+        'intitle:"yawcam" inurl:":8081"',
+        'intitle:"iGuard Fingerprint Security System"',
+        'intitle:"Edr1680 remote viewer"',
+        'intitle:"NetCam Live Image" -.edu -.gov -johnny.ihackstuff.com',
+        'intitle:"INTELLINET" intitle:"IP Camera Homepage"',
+        'intitle:"WEBDVR" -inurl:product -inurl:demo',
+        'intitle:"Middle frame of Videoconference Management System" ext:htm',
+        'intitle:"--- VIDEO WEB SERVER ---" intext:"Video Web Server" "Any time & Any where" username password',
+        'intitle:HomeSeer.Web.Control | Home.Status.Events.Log',
+        'intitle:"supervisioncam protocol"',
+        'intitle:"active webcam page"',
+        'VB Viewer inurl:/viewer/live/ja/live.html',
+        'inurl:control/camerainfo',
+        'inurl:"/view/view.shtml?id="',
+        'allintitle:Edr1680 remote viewer',
+        'allintitle:EverFocus |EDSR |EDSR400 Applet',
+        'allintitle:EDR1600 login |Welcome',
+        'intitle:"BlueNet Video Viewer"',
+        '(intitle:(EyeSpyFX|OptiCamFX) "go to camera")|(inurl:servlet/DetectBrowser)',
+        'intitle:"Veo Observer XT"',
+        'inurl:shtml|pl|php|htm|asp|aspx|pDf|cfm -(intext:observer)',
+        'inurl:"/view.shtml"',
+        'inurl:"ViewerFrame?M0de=Refresh"',
+        'liveapplet',
+        'intitle:liveapplet',
+        'allintitle:"Network Camera NetworkCamera" (disconnected)',
+        'intitle:liveapplet inurl:LvAppl',
+        'intitle:"EvoCam" inurl:"webcam.html"',
+        'intitle:"Live NetSnap Cam-Server feed"',
+        'intitle:start inurl:cgistart',
+        'site:.viewnetcam.com -www.viewnetcam.com',
+        'intitle:"IP Webcam" inurl:"/greet.html"',
+        'intitle:"NetCamSC*"',
+        'intitle:"NetCamXL*"',
+        'intitle:"NetCamSC*" | intitle:"NetCamXL*" inurl:index.html',
+        '"Camera Live Image" inurl:"guestimage.html"',
+        'intitle:"webcam" inurl:login',
+        'inurl:/ViewerFrame? intitle:"Network Camera NetworkCamera"',
+        'intitle:NetworkCamera intext:"Pan / Tilt" inurl:ViewerFrame',
+        'intitle:"IP CAMERA Viewer" intext:"setting | Client setting"',
+        'intitle:"Weather Wing WS-2"'
+    ]
+}
 
 BANNER = """
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -376,39 +421,65 @@ BANNER = """
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠂⠴⢉⠆⡁⠀⡀⠁⢀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠐⠡⠀⠀⠐⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-                                     OPERATION EYES ON
+Wired Eyes Search
 """
 
-# Global state
-FOUND_CAMS = []
-FILTER_MODE = "ALL"
+FOUND_CAMERAS = []
 
-# Country codes for targeted scans
+MODES = ['DORK', 'INSECAM'] 
+TYPES = ['STREAM', 'SNAPSHOT']
+
 COUNTRIES = {
-    "US": "United States", "JP": "Japan", "IT": "Italy", "DE": "Germany",
-    "RU": "Russia", "FR": "France", "KR": "Korea", "TW": "Taiwan",
-    "NO": "Norway", "CA": "Canada", "GB": "United Kingdom", "NL": "Netherlands",
-    "SE": "Sweden", "ES": "Spain", "CH": "Switzerland", "AT": "Austria",
-    "PL": "Poland", "CZ": "Czech Republic", "RO": "Romania", "BR": "Brazil"
+    "US": "United States", 
+    "JP": "Japan", 
+    "IT": "Italy", 
+    "DE": "Germany",
+    "RU": "Russia", 
+    "FR": "France", 
+    "KR": "Korea", 
+    "TW": "Taiwan",
+    "NO": "Norway", 
+    "CA": "Canada", 
+    "GB": "United Kingdom", 
+    "NL": "Netherlands",
+    "SE": "Sweden", 
+    "ES": "Spain", 
+    "CH": "Switzerland", 
+    "AT": "Austria",
+    "PL": "Poland", 
+    "CZ": "Czech Republic", 
+    "RO": "Romania", 
+    "BR": "Brazil"
+}
+
+SETTINGS = {
+    "Country": None,
+    "Filter": ["ALL"],
+    "Pages": 5,
+    "Types": [],
+    "Mode": ["DORK"],
+    "Type": ["STREAM"],
+    "Agent": "RANDOM",
+    "Logging": False
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# INSECAM SCRAPER
+# FUNCTIONS
 # ══════════════════════════════════════════════════════════════════════════════
 
-class InsecamScraper:
-    """Scrapes the Insecam public camera directory."""
-    
-    def build_url(self, country=None, page=1):
+class insecam_scraper:    
+    def build_url(self, country=None, page=10):
         if country:
-            return f"{INSECAM_BASE}/bycountry/{country}/?page={page}"
-        return f"{INSECAM_BASE}/byrating/?page={page}"
+            return f"{INSECAM_URL}/bycountry/{country}/?page={page}"
+        return f"{INSECAM_URL}/byrating/?page={page}"
     
-    def scrape_page(self, url):
-        """Extract camera URLs from a single Insecam page."""
+    def scrape_page(self, url, agent = "RANDOM"):
         cameras = []
         try:
-            headers = {'User-Agent': random.choice(USER_AGENTS)}
+            if agent in USER_AGENTS:
+                headers = {'User-Agent': USER_AGENTS[agent]}
+            else:
+                headers = {'User-Agent': random.choice(list(USER_AGENTS.values()))}
             response = requests.get(url, headers=headers, timeout=10)
             
             if response.status_code == 200:
@@ -418,11 +489,9 @@ class InsecamScraper:
                     src = img.get('src', '')
                     title = img.get('title', '')
                     
-                    # Junk domains to ignore
                     junk_terms = ['static', 'insecam', 'yandex', 'google', 'facebook', 'twitter', 
                                  'instagram', 'tiktok', 'analytics', 'doubleclick', 'counter']
                     
-                    # Skip static assets and junk
                     if 'http' in src and not any(term in src.lower() for term in junk_terms):
                         brand, location = self._parse_title(title)
                         cameras.append({
@@ -435,7 +504,6 @@ class InsecamScraper:
         return cameras
     
     def _parse_title(self, title):
-        """Extract brand and location from Insecam title."""
         brand, location = "IP Camera", "Unknown"
         try:
             if " in " in title:
@@ -447,32 +515,24 @@ class InsecamScraper:
             pass
         return brand, location
     
-    def scrape(self, country=None, max_pages=5):
-        """Scrape multiple pages in parallel."""
+    def scrape(self, country=None, max_pages=5, agent="RANDOM"):
         all_cameras = []
         print(f"{Fore.CYAN}[*] Scraping Insecam ({max_pages} pages)...")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             urls = [self.build_url(country, page) for page in range(1, max_pages + 1)]
-            results = executor.map(self.scrape_page, urls)
+            results = executor.map(self.scrape_page, urls, agent)
             
             for cameras in results:
                 all_cameras.extend(cameras)
         
-        # Remove duplicates
         unique = {cam['url']: cam for cam in all_cameras}
         print(f"{Fore.GREEN}[+] Found {len(unique)} unique feeds from Insecam")
+
         return list(unique.values())
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SEARCH ENGINE DORKING
-# ══════════════════════════════════════════════════════════════════════════════
-
-class DorkEngine:
-    """Multi-engine Google dorking for camera discovery."""
-    
-    def search_yahoo(self, query, limit=50):
-        """Search Yahoo with stealth headers."""
+class search_engine_dorks:    
+    def search_yahoo(self, query, limit=50, agent = "RANDOM"):
         results = []
         start = 1
         
@@ -480,11 +540,18 @@ class DorkEngine:
             time.sleep(random.uniform(1.0, 2.0))
             
             try:
-                headers = {
-                    'User-Agent': random.choice(USER_AGENTS),
-                    'Accept': 'text/html,application/xhtml+xml',
-                    'Referer': 'https://www.google.com/'
-                }
+                if agent in USER_AGENTS:
+                    headers = {
+                        'User-Agent': USER_AGENTS[agent],
+                        'Accept': 'text/html,application/xhtml+xml',
+                        'Referer': 'https://www.google.com/'
+                    }
+                else:
+                    headers = {
+                        'User-Agent': random.choice(list(USER_AGENTS.values())),
+                        'Accept': 'text/html,application/xhtml+xml',
+                        'Referer': 'https://www.google.com/'
+                    }
                 
                 url = f"https://search.yahoo.com/search?p={query}&b={start}&pz=10"
                 response = requests.get(url, headers=headers, timeout=15)
@@ -514,7 +581,6 @@ class DorkEngine:
         return results
     
     def _extract_yahoo_url(self, raw_url):
-        """Extract real URL from Yahoo redirect."""
         if '/RU=' in raw_url:
             try:
                 start = raw_url.find('/RU=') + 4
@@ -526,13 +592,16 @@ class DorkEngine:
                 pass
         return raw_url if 'http' in raw_url else None
     
-    def search_startpage(self, query, limit=50):
-        """Search Startpage (Google proxy)."""
+    def search_startpage(self, query, limit=50, agent = "RANDOM"):
         results = []
         seen = set()
         
         try:
-            headers = {'User-Agent': random.choice(USER_AGENTS)}
+            if agent in USER_AGENTS:
+                headers = {'User-Agent': USER_AGENTS[agent]}
+            else:
+                headers = {'User-Agent': random.choice(list(USER_AGENTS.values()))}
+
             response = requests.post(
                 "https://www.startpage.com/sp/search",
                 data={'query': query, 'cat': 'web', 'language': 'english'},
@@ -556,14 +625,13 @@ class DorkEngine:
         
         return results
     
-    def process_dork(self, dork, limit=20):
-        """Run a dork through multiple engines in parallel."""
+    def process_dork(self, dork, limit=20, agent="RANDOM"):
         all_results = []
         seen = set()
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             yahoo_future = executor.submit(self.search_yahoo, dork, limit)
-            startpage_future = executor.submit(self.search_startpage, dork, limit)
+            startpage_future = executor.submit(self.search_startpage, dork, limit, agent)
             
             for future in concurrent.futures.as_completed([yahoo_future, startpage_future]):
                 try:
@@ -573,15 +641,25 @@ class DorkEngine:
                             all_results.append(result)
                 except:
                     pass
-        
         return all_results
     
-    def scan(self, limit=20):
-        """Run all dorks and stream results."""
-        print(f"{Fore.CYAN}[*] Running {len(CAMERA_DORKS)} camera dorks...")
-        
+    def scan(self, limit=20, agent="RANDOM", dorks=["ALL"]):
+        if dorks == ["ALL"]:
+            print(f"{Fore.CYAN}[*] Running {len(CAMERA_DORKS)} camera dork types... with {sum(len(values) for values in CAMERA_DORKS.values())} dorks")
+        else:
+            print(f"{Fore.CYAN}[*] Running {len(dorks)} camera dork types...") #maybe in the future add the total dork count
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_map = {executor.submit(self.process_dork, dork, limit): dork for dork in CAMERA_DORKS}
+
+            if dorks == ["ALL"]:
+                future_map = {executor.submit(self.process_dork, dork, limit, agent): dork for dork in CAMERA_DORKS.items()}
+            else:
+                future_map = {
+                    executor.submit(self.process_dork, dork_item, limit, agent): dork_item
+                    for key in dorks
+                        if key in CAMERA_DORKS
+                            for dork_item in CAMERA_DORKS[key]
+                }
             
             for future in concurrent.futures.as_completed(future_map):
                 try:
@@ -590,15 +668,8 @@ class DorkEngine:
                 except:
                     pass
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CAMERA VERIFIER WITH GEOIP
-# ══════════════════════════════════════════════════════════════════════════════
-
-class CameraVerifier:
-    """Verify camera streams and enrich with GeoIP data."""
-    
+class camera_verifier:    
     def get_location(self, host):
-        """Lookup geographic location for an IP/hostname."""
         try:
             response = requests.get(
                 f"http://ip-api.com/json/{host}?fields=status,country,city",
@@ -614,103 +685,116 @@ class CameraVerifier:
             pass
         return "Unknown"
     
-    def verify(self, camera):
-        """Check if camera is live and determine stream type."""
+    def verify(self, camera, got_type=['STREAM'], agent="RANDOM"):
         url = camera['url']
-        
-        try:
-            headers = {'User-Agent': random.choice(USER_AGENTS)}
-            response = requests.get(url, timeout=6, stream=True, headers=headers)
+
+        if not url.startswith("http://"):
+            return None
+
+        if agent in USER_AGENTS:
+            headers = {'User-Agent': USER_AGENTS[agent]}
+        else:
+            headers = {'User-Agent': random.choice(list(USER_AGENTS.values()))}
+
+        response = requests.get(url, timeout=6, stream=True, headers=headers)
+   
+        if response.status_code == 200:
+            content_type = response.headers.get('Content-Type', '').lower()
+            server = response.headers.get('Server', 'Unknown')
             
-            if response.status_code == 200:
-                content_type = response.headers.get('Content-Type', '').lower()
-                server = response.headers.get('Server', 'Unknown')
+            cam_type = None
+            if 'multipart' in content_type or 'x-mixed-replace' in content_type:
+                cam_type = 'LIVE STREAM (MJPEG)'
+            elif 'image' in content_type:
+                cam_type = 'SNAPSHOT (JPEG)'
+            elif 'video' in content_type:
+                cam_type = 'VIDEO FEED'
+            
+            if cam_type:
+                if 'STREAM' in got_type  and 'STREAM' not in cam_type:
+                    return None
+                if 'SNAPSHOT' in got_type and 'SNAPSHOT' not in cam_type:
+                    return None
                 
-                # Determine camera type
-                cam_type = None
-                if 'multipart' in content_type or 'x-mixed-replace' in content_type:
-                    cam_type = 'LIVE STREAM (MJPEG)'
-                elif 'image' in content_type:
-                    cam_type = 'SNAPSHOT (JPEG)'
-                elif 'video' in content_type:
-                    cam_type = 'VIDEO FEED'
-                
-                if cam_type:
-                    # Apply filter
-                    if FILTER_MODE == 'STREAM' and 'STREAM' not in cam_type:
-                        return None
-                    if FILTER_MODE == 'SNAPSHOT' and 'SNAPSHOT' not in cam_type:
-                        return None
-                    
-                    # Get location if not already known
-                    location = camera.get('location', 'Unknown')
-                    if location == 'Unknown':
-                        try:
-                            host = urlparse(url).hostname
-                            location = self.get_location(host)
-                        except:
-                            pass
-                    
-                    return {
-                        'url': url,
-                        'status': 'Live',
-                        'type': cam_type,
-                        'server': server,
-                        'brand': camera.get('brand', 'IP Camera'),
-                        'location': location
-                    }
-        except:
-            pass
+                location = camera.get('location', 'Unknown')
+                if location == 'Unknown':
+                    try:
+                        host = urlparse(url).hostname
+                        location = self.get_location(host)
+                    except:
+                        pass
+
+                return {
+                    'url': url,
+                    'status': 'Live',
+                    'type': cam_type,
+                    'server': server,
+                    'brand': camera.get('brand', 'IP Camera'),
+                    'location': location
+                }
+            else:
+                return {
+                    'url': url,
+                    'status': 'Live',
+                    'type': "UNKNOWN",
+                    'server': "UNKNOWN",
+                    'brand': "UNKNOWN",
+                    'location': "UNKNOWN"
+                }
+        else:
+            return {
+                'url': url,
+                'status': 'Live',
+                'type': "UNKNOWN",
+                'server': "UNKNOWN",
+                'brand': "UNKNOWN",
+                'location': "UNKNOWN"
+            }
         
         return None
 
-# ══════════════════════════════════════════════════════════════════════════════
-# USER INTERFACE
-# ══════════════════════════════════════════════════════════════════════════════
-
 def center_text(text, width=120):
-    """Center text for display."""
-    # Remove color codes to calculate actual length
     clean = text
     for code in [Fore.RED, Fore.GREEN, Fore.CYAN, Fore.YELLOW, Fore.WHITE, Fore.BLUE, Fore.MAGENTA, Style.BRIGHT, Style.RESET_ALL]:
         clean = clean.replace(code, '')
     padding = max(0, (width - len(clean)) // 2)
     return ' ' * padding + text
 
-def print_banner():
-    """Display the application banner."""
-    # Print each line of ASCII art centered
-    for line in BANNER.strip().split('\n'):
+def print_banner(banner):
+    for line in banner.strip().split('\n'):
         print(Fore.RED + center_text(line))
     
-    print()
-    print(center_text(f"{Style.BRIGHT}{Fore.WHITE}v3.0 | GLOBAL SURVEILLANCE | UNIFIED INTELLIGENCE"))
-    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Made by Y0oshi | IG: @rde0"))
+    #print()
+    print(center_text(f"{Style.BRIGHT}{Fore.WHITE}v1.0"))
+    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Forked by auski"))
+    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Original by Y0oshi"))
     print(center_text(Fore.WHITE + '-' * 80))
 
-def run_scan(country=None, pages=3, mode='DORK'):
-    """Execute a scan operation."""
-    import threading
-    global FOUND_CAMS
+    print(center_text(Fore.BLUE + "help for commands"))
+
+def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], mode=['DORK'], agent="RANDOM", logging=False):
+    global FOUND_CAMERAS
     
-    insecam = InsecamScraper()
-    dorker = DorkEngine()
-    verifier = CameraVerifier()
+    #settings here?
+    insecam = insecam_scraper()
+    dorker = search_engine_dorks()
+    verifier = camera_verifier()
     
     seen_urls = set()
     
     print(f"\n{Style.BRIGHT}{Fore.YELLOW}" + center_text(f"=== SCANNING ({mode}) ==="))
     print()
     
-    def verify_and_print(camera):
+    def verify_and_print(camera, agent):
         if camera['url'] in seen_urls:
             return
+
         seen_urls.add(camera['url'])
         
-        result = verifier.verify(camera)
+        result = verifier.verify(camera, got_type=got_type, agent=agent)
+        #print(result)
         if result:
             color = Fore.GREEN if 'STREAM' in result['type'] else Fore.CYAN
-            # Use \r to overwrite spinner line
             print(f"\r{color}[+] {Fore.WHITE}{result['url']} {Fore.MAGENTA}({result['brand']} | {result['location']})")
             FOUND_CAMS.append(result)
     
@@ -724,102 +808,194 @@ def run_scan(country=None, pages=3, mode='DORK'):
                 time.sleep(0.5)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-        # Insecam scraping
-        if mode in ['UNIFIED', 'INSECAM']:
-            cameras = insecam.scrape(country=country, max_pages=pages)
-            executor.map(verify_and_print, cameras)
+        if 'INSECAM' in mode:
+            FOUND_CAMERAS = insecam.scrape(country=country, max_pages=pages, agent=agent)
+            executor.map(verify_and_print, FOUND_CAMERAS, agent)
         
-        # Dorking
-        if mode in ['UNIFIED', 'DORK']:
+        if 'DORK' in mode:
             t = threading.Thread(target=spinner)
             t.start()
             try:
-                for camera in dorker.scan(limit=pages * 10):
-                    executor.submit(verify_and_print, camera)
+                for camera in dorker.scan(limit=pages * 10, agent=agent, dorks=got_filter): #scan(self, limit=20, agent="RANDOM", dorks=["ALL"])
+                    executor.submit(verify_and_print, camera, agent)
             finally:
                 stop_spinner = True
                 t.join()
-                sys.stdout.write('\r' + ' ' * 50 + '\r') # Clear spinner line
+                sys.stdout.write('\r' + ' ' * 50 + '\r')
 
-    print(f"\n{Fore.CYAN}[*] Scan complete. Found {len(FOUND_CAMS)} live cameras.")
+    print(f"\n{Fore.CYAN}[*] Scan complete. Found {len(FOUND_CAMERAS)} live cameras.")
     
-    # Save results
-    filename = f"scan_result_{int(time.time())}.json"
-    with open(filename, 'w') as f:
-        json.dump(FOUND_CAMS, f, indent=4)
-    print(f"{Fore.BLUE}[*] Results saved to {filename}")
+    if logging == True:
+        filename = f"scan_result_{int(time.time())}.json"
+        with open(filename, 'w') as f:
+            json.dump(FOUND_CAMERAS, f, indent=4)
+        print(f"{Fore.BLUE}[*] Results saved to {filename}")
 
 def resize_terminal(rows=40, cols=125):
     """Resize the terminal window to fit content."""
     sys.stdout.write(f"\x1b[8;{rows};{cols}t")
 
-def main():
-    """Main application entry point."""
-    global FILTER_MODE
-    
+def main():        
     resize_terminal()
-    print_banner()
-    
-    print(f"\n{Fore.WHITE}Commands:")
-    print(f"  {Fore.CYAN}/scrape [pages]{Fore.WHITE}  - Scrape Insecam directory")
-    print(f"  {Fore.CYAN}/scan [pages]{Fore.WHITE}    - Deep search with dorks")
-    print(f"  {Fore.CYAN}/country [code]{Fore.WHITE}  - Set target country")
-    print(f"  {Fore.CYAN}/mode [type]{Fore.WHITE}     - Filter: ALL, STREAM, SNAPSHOT")
-    print(f"  {Fore.CYAN}/exit{Fore.WHITE}            - Quit")
-    
-    target_country = None
-    
+    print_banner(BANNER)
+        
     while True:
         try:
-            cmd = input(f"\n{Fore.RED}eyes-on ({FILTER_MODE})> {Fore.WHITE}").strip()
+            cmd = input(f"\n{Fore.RED}> {Fore.WHITE}").strip()
+
             if not cmd:
                 continue
             
             parts = cmd.split()
             command = parts[0].lower()
             
-            if command == '/scrape':
+            if command == 'help':
+                print(f"\n{Fore.WHITE}Commands:\n")
+                print(f"{Fore.CYAN} clear {Fore.WHITE} - clears screen")
+                print(f"{Fore.CYAN} pages {Fore.BLUE}[pages]{Fore.WHITE} - set the total pages to go through")
+                print(f"{Fore.CYAN} country {Fore.BLUE}[code/list]{Fore.WHITE} - Set the target country")
+                print(f"{Fore.CYAN} agent {Fore.BLUE}[type/list]{Fore.WHITE} - Set the user agent")
+                print(f"{Fore.CYAN} mode {Fore.BLUE} [type/list]{Fore.WHITE} - Modes: dork, insecam")
+                print(f"{Fore.CYAN} type {Fore.BLUE} [type/list]{Fore.WHITE} - Types: stream, snapshot")
+                #print(f"{Fore.CYAN} threads {Fore.BLUE}[count]{Fore.WHITE} - Set the threads count")
+                #add a timeout for scan time?
+                print(f"{Fore.CYAN} filter {Fore.BLUE} [type/all/list]{Fore.WHITE} - Filter through camera dorks and types")
+                print(f"{Fore.CYAN} log {Fore.BLUE}[true/false]{Fore.WHITE} - Prints found results into a file")
+                print(f"{Fore.CYAN} scan {Fore.WHITE} - start scan")
+                print(f"{Fore.CYAN} exit {Fore.WHITE} - quit")
+            elif command == 'scan':
+                #country=None, Filter=['ALL'], pages=100, type=['STREAM'], mode=['DORK'], agent="RANDOM", logging=False
+                run_scan(country=SETTINGS["Country"], got_filter=SETTINGS["Filter"], got_type=SETTINGS["Type"], pages=SETTINGS["Pages"], agent=SETTINGS["Agent"], mode=SETTINGS["Mode"], logging=SETTINGS["Logging"])
+            elif command == 'pages' or command == 'page':
                 pages = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 3
-                run_scan(country=target_country, pages=pages, mode='INSECAM')
-            
-            elif command == '/scan':
-                pages = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 3
-                run_scan(country=target_country, pages=pages, mode='DORK')
-            
-            elif command == '/country':
+
+                print(f"{Fore.GREEN}[+] Pages set to {pages}")
+                SETTINGS["Pages"] = pages 
+            elif command == 'country':
                 if len(parts) > 1:
                     code = parts[1].upper()
                     if code in COUNTRIES:
-                        print(f"{Fore.GREEN}[+] Target set to {code} ({COUNTRIES[code]})")
-                        run_scan(country=code, pages=3, mode='INSECAM')
+                        SETTINGS["Country"] = code
+                        print(f"\n{Fore.GREEN}[+] Country Target set to {code} ({COUNTRIES[code]})")
+                    elif code == "LIST":
+                        for code, country in COUNTRIES.items():
+                            print(f"\n{Fore.BLUE} {code} {Fore.GREEN} {country} {Fore.WHITE}")
+                    elif code == "NONE":
+                        SETTINGS["Country"] = None
+                        print(f"\n{Fore.GREEN}[+] Country Target set to None")
                     else:
-                        print(f"{Fore.RED}[-] Invalid country code")
+                        print(f"\n{Fore.RED}[-] Invalid country code")
                 else:
-                    print(f"{Fore.YELLOW}[*] Usage: /country [CODE] (e.g. US, JP, RU)")
-            
-            elif command == '/mode':
+                    print(f"\n{Fore.YELLOW}[*] Current: {SETTINGS["Country"]}")
+            elif command == 'mode' or command == 'modes':
                 if len(parts) > 1:
                     mode = parts[1].upper()
-                    if mode in ['ALL', 'STREAM', 'SNAPSHOT']:
-                        FILTER_MODE = mode
-                        print(f"{Fore.GREEN}[+] Filter set to {FILTER_MODE}")
+                    if mode in MODES:
+                        if mode in SETTINGS["Mode"]:
+                            if len(SETTINGS["Mode"]) != 1:
+                                SETTINGS["Mode"].remove(mode)
+                                print(f"\n{Fore.RED}[+] removed mode {parts[1]}")
+                            else:
+                                print(f"\n{Fore.RED}[-] cannot remove mode {parts[1]} since it's the only one")
+                        else:
+                            SETTINGS["Mode"].append(mode)
+                        print(f"\n{Fore.GREEN}[+] Filter set to {SETTINGS["Mode"]}")
+                    elif mode == "LIST":
+                        for got_mode in MODES:
+                            print(f"\n{Fore.BLUE} {got_mode} {Fore.WHITE}")
                     else:
-                        print(f"{Fore.RED}[-] Invalid mode")
+                        print(f"\n{Fore.RED}[-] Invalid mode")
                 else:
-                    print(f"{Fore.YELLOW}[*] Current: {FILTER_MODE}")
-            
-            elif command == '/exit':
+                    print(f"\n{Fore.YELLOW}[*] Current: {SETTINGS["Mode"]}")  
+            elif command == 'type' or command == 'types':
+                if len(parts) > 1:
+                    type_got = parts[1].upper()
+                    if type_got in TYPES:
+                        if type_got in SETTINGS["Type"]:
+                            if len(SETTINGS["Type"]) != 1:
+                                SETTINGS["Type"].remove(type_got)
+                                print(f"\n{Fore.RED}[+] removed type {parts[1]}")
+                            else:
+                                print(f"\n{Fore.RED}[-] cannot remove type {parts[1]} since it's the only one")
+                        else:
+                            SETTINGS["Type"].append(type_got)
+                        print(f"\n{Fore.GREEN}[+] Type set to {SETTINGS["Type"]}")
+                    elif type_got == "LIST":
+                        for got_type in TYPES:
+                            print(f"\n{Fore.BLUE} {got_type} {Fore.WHITE}")
+                    else:
+                        print(f"\n{Fore.RED}[-] Invalid type")
+                else:
+                    print(f"\n{Fore.YELLOW}[*] Current: {SETTINGS["Type"]}")   
+            elif command == 'filter':          
+                if len(parts) > 1:
+                    filter_got = parts[1].upper()
+                    if filter_got in CAMERA_DORKS:
+                        if SETTINGS["Filter"] == ["ALL"]:
+                            SETTINGS["Filter"].clear()
+
+                        if filter_got in SETTINGS["Filter"]:
+                            if len(SETTINGS["Filter"]) != 1:
+                                SETTINGS["Filter"].remove(filter_got)
+                                print(f"\n{Fore.RED}[+] removed filter {parts[1]}")
+                            else:
+                                print(f"\n{Fore.RED}[-] cannot remove filter {parts[1]} since it's the only one")
+                        else:
+                            SETTINGS["Filter"].append(filter_got)
+                        
+                        print(f"\n{Fore.GREEN}[+] Filter set to {SETTINGS["Filter"]}")
+                    elif filter_got == "ALL":
+                        SETTINGS["Filter"].clear()
+                        SETTINGS["Filter"].append("ALL")
+                        print(f"\n{Fore.GREEN}[+] Filter set to {SETTINGS["Filter"]}")
+                    elif filter_got == "LIST":
+                        for got_type in CAMERA_DORKS:
+                            print(f"\n{Fore.BLUE} {got_type} {Fore.WHITE}")
+                    else:
+                        print(f"\n{Fore.RED}[-] Invalid filter")
+                else:
+                    print(f"\n{Fore.YELLOW}[*] Current: {SETTINGS["Filter"]}")   
+            elif command == 'agent' or command == 'agents':
+                if len(parts) > 1:   
+                    agent = parts[1].upper()
+                    if agent in USER_AGENTS or agent == "RANDOM":
+                        SETTINGS["Agent"] = agent
+                        print(f"\n{Fore.GREEN}[+] Filter set to {SETTINGS["Agent"]}")
+                    elif agent == "LIST":
+                        for get_agent in USER_AGENTS:
+                            print(f"\n{Fore.WHITE} {get_agent} {Fore.WHITE}")  
+
+                        print(f"\n{Fore.WHITE} RANDOM {Fore.WHITE}")           
+                    else:
+                        print(f"\n{Fore.RED}[-] Invalid agent")
+                else:
+                    print(f"\n{Fore.YELLOW}[*] Current: {SETTINGS["Agent"]}")    
+            elif command == 'log':
+                if len(parts) > 1:
+                    log = parts[1].upper()
+
+                    if log in ["TRUE", "FALSE"]:
+                        answer = (log == "TRUE")
+                        SETTINGS["Logging"] = answer
+
+                        print(f"\n{Fore.GREEN}[+] Logging set to {SETTINGS["Logging"]}")
+                    else:
+                        print(f"\n{Fore.RED}[-] Invalid log setting")
+                else:
+                    print(f"\n{Fore.YELLOW}[*] set: {SETTINGS["Logging"]}")   
+            elif command == 'clear':
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print_banner(BANNER)
+            elif command == 'exit' or command == "quit":
                 sys.exit(0)
-            
-            elif command == '/clear':
-                print('\033[H\033[J', end='')
-                print_banner()
+            else:
+                print(f"\n{Fore.RED}[?] Uknown Command: " + parts[0])
         
         except KeyboardInterrupt:
             print(f"\n{Fore.RED}Aborted.")
             break
         except Exception as e:
-            print(f"{Fore.RED}[-] Error: {e}")
+            print(f"\n{Fore.RED}[-] Error: {e}")
 
 if __name__ == '__main__':
     main()
