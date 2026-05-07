@@ -59,7 +59,7 @@ sudo ./install.sh
 eyeson
 ```
 
-**Run the file in python**
+## Run the file in python
 
 ```
 python eyes.py
