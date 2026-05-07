@@ -43,11 +43,6 @@ USER_AGENTS =  {
 
 INSECAM_URL = "http://www.insecam.org/en"
 
-data_map = {
-    "colors": ["red", "green", "blue"],
-    "numbers": ["one", "two", "three"]
-}
-
 CAMERA_DORKS = {
     "AXIS":
     [
