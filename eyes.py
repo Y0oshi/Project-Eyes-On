@@ -98,11 +98,12 @@ CAMERA_DORKS = {
         'intitle:"Foscam" inurl:"/live.htm"'
     ],
 
-    "PARASONIC":
+    "PANASONIC":
     [
         'intitle:"Foscam" inurl:"login.htm"',
         'inurl:"/videostream.cgi?user="',
-        'intitle:"Foscam" inurl:"/live.htm"'
+        'intitle:"Foscam" inurl:"/live.htm"',
+        'intitle:"Panasonic Network Camera"'
     ],
 
     "DLINK":
@@ -131,12 +132,6 @@ CAMERA_DORKS = {
         'inurl:"/sample/LvAppl/lvappl.htm"',
         'inurl:"lvappl.htm"',
         'inurl:"/view.shtml" "camera"'
-    ],
-
-    "VIVOTEK":
-    [
-        'server:VVTK-HTTP-Server',
-        'inurl:"/cgi-bin/viewer/video.jpg"'
     ],
 
     "WEBCAM":
@@ -227,6 +222,8 @@ CAMERA_DORKS = {
 
     "VIVOTEK":
     [
+        'server:VVTK-HTTP-Server',
+        'inurl:"/cgi-bin/viewer/video.jpg"'
         'intitle:"Vivotek Camera" inurl:/viewer',
         'intitle:"Vivotek" intext:"live view"',
         'intitle:"Vivotek" inurl:/cgi-bin/',
@@ -791,7 +788,7 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
         if result:
             color = Fore.GREEN if 'STREAM' in result['type'] else Fore.CYAN
             print(f"\r{color}[+] {Fore.WHITE}{result['url']} {Fore.MAGENTA}({result['brand']} | {result['location']})")
-            FOUND_CAMS.append(result)
+            FOUND_CAMERAS.append(result)
     
     stop_spinner = False
     def spinner():
