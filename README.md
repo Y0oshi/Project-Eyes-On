@@ -63,7 +63,7 @@ eyeson
 python eyes.py
 ```
 
-## Or
+**Or**
 
 ```
 python3 eyes.py
