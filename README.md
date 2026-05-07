@@ -25,7 +25,7 @@
 -  beautifulsoup4
 -  colorama
 
-### macOS / Linux / Windows
+### Download
 1. **Download Libraries using pip**
 ```
 pip install beautifulsoup4
@@ -39,8 +39,10 @@ git clone https://github.com/Y0oshi/Project-Eyes-On.git
 cd Project-Eyes-On
 ```
 
-**Options**
+### Options
 From here you have two options, either 1. to install to command line or 2. use python directly
+
+## Install
 
 1. **Install the Command**:
 The installer script sets up and creates the `eyeson` command.
