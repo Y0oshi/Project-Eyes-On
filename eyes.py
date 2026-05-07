@@ -681,8 +681,6 @@ class camera_verifier:
         try:
             url = camera['url']
 
-            print(url)
-
             if not url.startswith("http://"):
                 return None
 
