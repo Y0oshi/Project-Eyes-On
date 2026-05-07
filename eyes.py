@@ -449,7 +449,7 @@ SETTINGS = {
     "Filter": ["ALL"],
     "Pages": 5,
     "Types": [],
-    "Mode": ["DORK"],
+    "Mode": ["INSECAM"],
     "Type": ["STREAM"],
     "Agent": "RANDOM",
     "Logging": False
