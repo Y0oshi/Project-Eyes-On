@@ -40,7 +40,18 @@ git clone https://github.com/Y0oshi/Project-Eyes-On.git
 cd Project-Eyes-On
 ```
 
-3. **Run the file in python**
+**Options**
+From here you have two options, either 1. to install to command line or 2. use python directly
+
+1. **Install the Command**:
+The installer script sets up and creates the `eyeson` command.
+
+```
+chmod +x install.sh
+sudo ./install.sh
+```
+
+2. **Run the file in python**
 
 ```
 python eyes.py
