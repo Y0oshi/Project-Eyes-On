@@ -446,10 +446,9 @@ COUNTRIES = {
 
 SETTINGS = {
     "Country": None,
-    "Filter": ["ALL"],
-    "Pages": 5,
-    "Types": [],
-    "Mode": ["INSECAM"],
+    "Filter": ["SONY", "CGI", "WEBCAM"],
+    "Pages": 100,
+    "Mode": ["DORK"], #INSECAM
     "Type": ["STREAM"],
     "Agent": "RANDOM",
     "Logging": False
@@ -508,7 +507,6 @@ class insecam_scraper:
         return brand, location
     
     def scrape(self, country=None, max_pages=5, agent="RANDOM"):
-        all_cameras = []
         print(f"{Fore.CYAN}[*] Scraping Insecam ({max_pages} pages)...")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -516,9 +514,9 @@ class insecam_scraper:
             results = executor.map(self.scrape_page, urls)
             
             for cameras in results:
-                all_cameras.extend(cameras)
+                FOUND_CAMERAS.extend(cameras)
         
-        unique = {cam['url']: cam for cam in all_cameras}
+        unique = {cam['url']: cam for cam in FOUND_CAMERAS}
         print(f"{Fore.GREEN}[+] Found {len(unique)} unique feeds from Insecam")
 
         return list(unique.values())
@@ -702,12 +700,15 @@ class camera_verifier:
                     cam_type = 'SNAPSHOT (JPEG)'
                 elif 'video' in content_type:
                     cam_type = 'VIDEO FEED'
+                else:
+                    cam_type = 'Unknown'
                 
                 if cam_type:
-                    if 'STREAM' in got_type  and 'STREAM' not in cam_type:
-                        return None
-                    if 'SNAPSHOT' in got_type and 'SNAPSHOT' not in cam_type:
-                        return None
+                    if cam_type != 'Unknown':
+                        if 'STREAM' in got_type  and 'STREAM' not in cam_type:
+                            return None
+                        if 'SNAPSHOT' in got_type and 'SNAPSHOT' not in cam_type:
+                            return None
                     
                     location = camera.get('location', 'Unknown')
                     if location == 'Unknown':
@@ -715,28 +716,35 @@ class camera_verifier:
                             host = urlparse(url).hostname
                             location = self.get_location(host)
                         except:
-                            pass
+                            return {
+                                'url': url,
+                                'status': 'Live',
+                                'type': cam_type,
+                                'server': server,
+                                'brand': camera.get('brand', 'IP Camera'),
+                                'location': location
+                            }
 
-                    return {
-                        'url': url,
-                        'status': 'Live',
-                        'type': cam_type,
-                        'server': server,
-                        'brand': camera.get('brand', 'IP Camera'),
-                        'location': location
-                    }
+                return {
+                    'url': url,
+                    'status': 'Live',
+                    'type': cam_type,
+                    'server': server,
+                    'brand': camera.get('brand', 'IP Camera'),
+                    'location': location
+                }
             else:
-                print("GOT HERE ERROR THING")
                 raise
         except:
             return {
                 'url': url,
                 'status': 'Live',
-                'type': "UNKNOWN",
-                'server': "UNKNOWN",
-                'brand': "UNKNOWN",
-                'location': "UNKNOWN"
+                'type': "Unknown",
+                'server': "Unknown",
+                'brand': "Unknown",
+                'location': "Unknown"
             }        
+
         return None
 
 def center_text(text, width=120):
@@ -770,6 +778,7 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
     print()
     
     def verify_and_print(camera, agent):
+
         if camera['url'] in seen_urls:
             return
 
@@ -791,15 +800,18 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
                 sys.stdout.flush()
                 time.sleep(0.5)
 
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         if 'INSECAM' in mode:
             FOUND_CAMERAS = insecam.scrape(country=country, max_pages=pages, agent=agent)
             executor.map(verify_and_print, FOUND_CAMERAS, agent)
-        
+
+        camera = []        
         if 'DORK' in mode:
             t = threading.Thread(target=spinner)
             t.start()
             try:
+                #FOUND_CAMERAS.
                 for camera in dorker.scan(limit=pages * 10, agent=agent, dorks=got_filter):
                     executor.submit(verify_and_print, camera, agent)
             finally:
@@ -836,7 +848,7 @@ def main():
                 print(f"\n{Fore.WHITE}Commands:\n")
                 print(f"{Fore.CYAN} clear {Fore.WHITE} - clears screen")
                 print(f"{Fore.CYAN} pages {Fore.BLUE}[pages]{Fore.WHITE} - set the total pages to go through")
-                print(f"{Fore.CYAN} country {Fore.BLUE}[code/list]{Fore.WHITE} - Set the target country")
+                print(f"{Fore.CYAN} country {Fore.BLUE}[code/list]{Fore.WHITE} - Set the target country (Note: only works for insecam,)")
                 print(f"{Fore.CYAN} agent {Fore.BLUE}[type/list]{Fore.WHITE} - Set the user agent")
                 print(f"{Fore.CYAN} mode {Fore.BLUE} [type/list]{Fore.WHITE} - Modes: dork, insecam")
                 print(f"{Fore.CYAN} type {Fore.BLUE} [type/list]{Fore.WHITE} - Types: stream, snapshot")
