@@ -1,5 +1,4 @@
 # Wired Eyes Search v1.0 (Global Surveillance)
-**Maintained by Auski**
 **Created by Y0oshi**
 
 ![Screenshot](screenshot.png)
