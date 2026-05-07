@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  OPERATION EYES ON v3.1                                                      ║
+║  OPERATION EYES ON v3.0                                                      ║
 ║  Public IP Camera Finder/Scraper Tool                                        ║
 ║  Created by Y0oshi                                                           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -622,7 +622,7 @@ class search_engine_dorks:
         seen = set()
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            yahoo_future = executor.submit(self.search_yahoo, dork, limit)
+            yahoo_future = executor.submit(self.search_yahoo, dork, limit, agent)
             startpage_future = executor.submit(self.search_startpage, dork, limit, agent)
             
             for future in concurrent.futures.as_completed([yahoo_future, startpage_future]):
@@ -679,8 +679,9 @@ class camera_verifier:
     
     def verify(self, camera, got_type=['STREAM'], agent="RANDOM"):
         try:
-            catch
             url = camera['url']
+
+            print(url)
 
             if not url.startswith("http://"):
                 return None
@@ -727,6 +728,7 @@ class camera_verifier:
                         'location': location
                     }
             else:
+                print("GOT HERE ERROR THING")
                 raise
         except:
             return {
@@ -794,7 +796,7 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         if 'INSECAM' in mode:
             FOUND_CAMERAS = insecam.scrape(country=country, max_pages=pages, agent=agent)
-            executor.map(verify_and_print, FOUND_CAMERAS)
+            executor.map(verify_and_print, FOUND_CAMERAS, agent)
         
         if 'DORK' in mode:
             t = threading.Thread(target=spinner)
