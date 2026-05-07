@@ -16,7 +16,7 @@
 -   **Country Targeting**: Target specific regions (e.g., `/country US`, `/country RU`).
 -   **Live Verification**: Automatically detects stream types (MJPEG, JPEG, Video).
 
-### Prerequisites
+### Packages
 -   Python 3.x
 -   Pip
 
@@ -50,8 +50,6 @@ The installer script sets up and creates the `eyeson` command.
 ```
 chmod +x install.sh
 sudo ./install.sh
-
-##
 ```
 
 **Run**:
