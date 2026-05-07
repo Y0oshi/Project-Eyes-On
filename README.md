@@ -42,23 +42,30 @@ cd Project-Eyes-On
 ### Options
 From here you have two options, either 1. to install to command line or 2. use python directly
 
-## Install
+## Install the Command directly
 
-1. **Install the Command**:
+**Install the Command**:
 The installer script sets up and creates the `eyeson` command.
 
 ```
 chmod +x install.sh
 sudo ./install.sh
+
+##
 ```
 
-2. **Run the file in python**
+**Run**:
+```
+eyeson
+```
+
+**Run the file in python**
 
 ```
 python eyes.py
 ```
 
-or
+## Or
 
 ```
 python3 eyes.py
