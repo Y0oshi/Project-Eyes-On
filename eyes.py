@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  Wired Eyes Search v1.0                                                      ║
+║  OPERATION EYES ON v3.0                                                      ║
 ║  Public IP Camera Finder/Scraper Tool                                        ║
-║  Created by Y0oshi                                                           ║ 
-║  Forked by: auski                                                            ║
+║  Created by Y0oshi                                                           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
+#--  For educational and authorized security research purposes only --
 
 A surveillance tool for discovering publicly accessible IP cameras using the options:
   - Insecam directory scraping
@@ -413,7 +413,7 @@ BANNER = """
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠂⠴⢉⠆⡁⠀⡀⠁⢀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠐⠡⠀⠀⠐⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-Wired Eyes Search
+OPERATION EYES ON 
 """
 
 FOUND_CAMERAS = []
@@ -513,7 +513,7 @@ class insecam_scraper:
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             urls = [self.build_url(country, page) for page in range(1, max_pages + 1)]
-            results = executor.map(self.scrape_page, urls, agent)
+            results = executor.map(self.scrape_page, urls)
             
             for cameras in results:
                 all_cameras.extend(cameras)
@@ -678,62 +678,57 @@ class camera_verifier:
         return "Unknown"
     
     def verify(self, camera, got_type=['STREAM'], agent="RANDOM"):
-        url = camera['url']
+        try:
+            catch
+            url = camera['url']
 
-        if not url.startswith("http://"):
-            return None
+            if not url.startswith("http://"):
+                return None
 
-        if agent in USER_AGENTS:
-            headers = {'User-Agent': USER_AGENTS[agent]}
-        else:
-            headers = {'User-Agent': random.choice(list(USER_AGENTS.values()))}
-
-        response = requests.get(url, timeout=6, stream=True, headers=headers)
-   
-        if response.status_code == 200:
-            content_type = response.headers.get('Content-Type', '').lower()
-            server = response.headers.get('Server', 'Unknown')
-            
-            cam_type = None
-            if 'multipart' in content_type or 'x-mixed-replace' in content_type:
-                cam_type = 'LIVE STREAM (MJPEG)'
-            elif 'image' in content_type:
-                cam_type = 'SNAPSHOT (JPEG)'
-            elif 'video' in content_type:
-                cam_type = 'VIDEO FEED'
-            
-            if cam_type:
-                if 'STREAM' in got_type  and 'STREAM' not in cam_type:
-                    return None
-                if 'SNAPSHOT' in got_type and 'SNAPSHOT' not in cam_type:
-                    return None
-                
-                location = camera.get('location', 'Unknown')
-                if location == 'Unknown':
-                    try:
-                        host = urlparse(url).hostname
-                        location = self.get_location(host)
-                    except:
-                        pass
-
-                return {
-                    'url': url,
-                    'status': 'Live',
-                    'type': cam_type,
-                    'server': server,
-                    'brand': camera.get('brand', 'IP Camera'),
-                    'location': location
-                }
+            if agent in USER_AGENTS:
+                headers = {'User-Agent': USER_AGENTS[agent]}
             else:
-                return {
-                    'url': url,
-                    'status': 'Live',
-                    'type': "UNKNOWN",
-                    'server': "UNKNOWN",
-                    'brand': "UNKNOWN",
-                    'location': "UNKNOWN"
-                }
-        else:
+                headers = {'User-Agent': random.choice(list(USER_AGENTS.values()))}
+
+            response = requests.get(url, timeout=6, stream=True, headers=headers)
+    
+            if response.status_code == 200:
+                content_type = response.headers.get('Content-Type', '').lower()
+                server = response.headers.get('Server', 'Unknown')
+                
+                cam_type = None
+                if 'multipart' in content_type or 'x-mixed-replace' in content_type:
+                    cam_type = 'LIVE STREAM (MJPEG)'
+                elif 'image' in content_type:
+                    cam_type = 'SNAPSHOT (JPEG)'
+                elif 'video' in content_type:
+                    cam_type = 'VIDEO FEED'
+                
+                if cam_type:
+                    if 'STREAM' in got_type  and 'STREAM' not in cam_type:
+                        return None
+                    if 'SNAPSHOT' in got_type and 'SNAPSHOT' not in cam_type:
+                        return None
+                    
+                    location = camera.get('location', 'Unknown')
+                    if location == 'Unknown':
+                        try:
+                            host = urlparse(url).hostname
+                            location = self.get_location(host)
+                        except:
+                            pass
+
+                    return {
+                        'url': url,
+                        'status': 'Live',
+                        'type': cam_type,
+                        'server': server,
+                        'brand': camera.get('brand', 'IP Camera'),
+                        'location': location
+                    }
+            else:
+                raise
+        except:
             return {
                 'url': url,
                 'status': 'Live',
@@ -741,8 +736,7 @@ class camera_verifier:
                 'server': "UNKNOWN",
                 'brand': "UNKNOWN",
                 'location': "UNKNOWN"
-            }
-        
+            }        
         return None
 
 def center_text(text, width=120):
@@ -756,10 +750,8 @@ def print_banner(banner):
     for line in banner.strip().split('\n'):
         print(Fore.RED + center_text(line))
     
-    #print()
-    print(center_text(f"{Style.BRIGHT}{Fore.WHITE}v1.0"))
-    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Forked by auski"))
-    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Original by Y0oshi"))
+    print(center_text(f"{Style.BRIGHT}{Fore.WHITE}v3.1"))
+    print(center_text(f"{Style.BRIGHT}{Fore.YELLOW}Created by Y0oshi"))
     print(center_text(Fore.WHITE + '-' * 80))
 
     print(center_text(Fore.BLUE + "help for commands"))
@@ -802,13 +794,13 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         if 'INSECAM' in mode:
             FOUND_CAMERAS = insecam.scrape(country=country, max_pages=pages, agent=agent)
-            executor.map(verify_and_print, FOUND_CAMERAS, agent)
+            executor.map(verify_and_print, FOUND_CAMERAS)
         
         if 'DORK' in mode:
             t = threading.Thread(target=spinner)
             t.start()
             try:
-                for camera in dorker.scan(limit=pages * 10, agent=agent, dorks=got_filter): #scan(self, limit=20, agent="RANDOM", dorks=["ALL"])
+                for camera in dorker.scan(limit=pages * 10, agent=agent, dorks=got_filter):
                     executor.submit(verify_and_print, camera, agent)
             finally:
                 stop_spinner = True
@@ -824,7 +816,6 @@ def run_scan(country=None, got_filter=['ALL'], pages=100, got_type=['STREAM'], m
         print(f"{Fore.BLUE}[*] Results saved to {filename}")
 
 def resize_terminal(rows=40, cols=125):
-    """Resize the terminal window to fit content."""
     sys.stdout.write(f"\x1b[8;{rows};{cols}t")
 
 def main():        
@@ -981,7 +972,7 @@ def main():
             elif command == 'exit' or command == "quit":
                 sys.exit(0)
             else:
-                print(f"\n{Fore.RED}[?] Uknown Command: " + parts[0])
+                print(f"\n{Fore.RED}[?] Unknown Command: " + parts[0])
         
         except KeyboardInterrupt:
             print(f"\n{Fore.RED}Aborted.")
