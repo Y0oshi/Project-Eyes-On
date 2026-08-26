@@ -1,4 +1,4 @@
-# Project Eyes On v3.0 (Global Surveillance)
+# Project Eyes On v4.0 (Global Surveillance)
 **Coded by: Y0oshi (IG: @rde0)**
 
 > "The unified intelligence tool for mass IP camera scanning."
@@ -8,17 +8,19 @@
 ![Screenshot](screenshot.png)
 
 ## Overview
-**Project Eyes On** is a hyper-fast, multi-threaded surveillance tool designed to locate open IP cameras across the globe. It combines two powerful engines:
+**Project Eyes On** is a multi-threaded reconnaissance tool designed to locate open IP cameras across the globe. It combines two engines:
 1.  **Directory Scraper**: Harvests feeds from Insecam.
-2.  **Deep Web Dorking**: Uses Google & Yahoo search dorks to find hidden cameras not listed in public directories.
+2.  **Deep Web Dorking**: Queries Yahoo, Bing, Mojeek and DuckDuckGo to find cameras not listed in public directories.
 
 ## Features
--   **Parallel Engine**: Queries **Yahoo** and **Startpage** simultaneously for maximum speed and results.
--   **GeoIP Enrichment**: Automatically resolves camera IP locations to **City, Country** (e.g., "New York, United States").
--   **Smart Deduplication**: Merges results from multiple engines to ensure unique feeds.
--   **Direct Connection**: Optimized for speed without unreliable proxies.
--   **Country Targeting**: Target specific regions (e.g., `/country US`, `/country RU`).
--   **Live Verification**: Automatically detects stream types (MJPEG, JPEG, Video).
+-   **4 Search Engines**: Queries Yahoo, Bing, Mojeek and DuckDuckGo in parallel.
+-   **Anti Rate-Limiting**: Per-engine pacing with automatic cooldowns keeps results flowing without proxies.
+-   **Path Probing**: Finds streams hidden behind JavaScript web UIs by probing common camera paths.
+-   **GeoIP Enrichment**: Resolves camera IPs to **City, Country** (e.g., "New York, United States").
+-   **Smart Deduplication**: Merges engines and strips cache-buster params so each camera appears once.
+-   **Live Verification**: Detects stream type (MJPEG, JPEG, Video).
+-   **Country Targeting**: Focus a specific region by code (e.g., US, JP, RU).
+-   **Interactive TUI**: Arrow-key menu — no slash commands.
 
 ## Installation
 
@@ -65,14 +67,31 @@ eyeson.bat
 
 ## Usage
 
-### Commands
-| Command | Description | Example |
+### Interactive Mode
+Run `eyeson` with no arguments to open the arrow-key menu:
+
+-   **SCAN** — dork search. Set pages, dork count, random selection and mode.
+-   **SCRAPE INSECAM** — directory scrape. Set pages, country and mode.
+-   **OPTIONS** — JSON export path and which search engines to use.
+-   **EXIT** — quit.
+
+### Command Line
+| Flag | Description | Example |
 | :--- | :--- | :--- |
-| `/scrape [Pages]` | Scrape Insecam (Public Directory) | `/scrape 5` |
-| `/scan [Pages]` | Google Dork Search (Deep Web) | `/scan 50` |
-| `/country [Code]` | Target Logic (e.g., US, JP, RU) | `/country US` |
-| `/mode [Type]` | Filter (ALL, STREAM, SNAPSHOT) | `/mode STREAM` |
-| `/exit` | Quit Tool | `/exit` |
+| `--scan N` | Dork search (N pages) | `--scan 50` |
+| `--scrape N` | Scrape Insecam (N pages) | `--scrape 5` |
+| `--unified N` | Run both engines (N pages) | `--unified 10` |
+| `-c, --country CC` | Target country code | `--country US` |
+| `-m, --mode M` | Filter: ALL / STREAM / SNAPSHOT | `--mode STREAM` |
+| `-f, --format F` | Report format: json / csv / html | `--format csv` |
+| `-o, --output DIR` | Output directory | `--output results` |
+| `--no-verify` | List candidates without verifying | `--no-verify` |
+| `--no-harvest` | Disable embedded-URL harvesting | `--no-harvest` |
+| `--max-dorks N` | Cap dork count (0 = all) | `--max-dorks 100` |
+| `--dorks FILE` | Custom dorks file (one per line) | `--dorks dorks.txt` |
+| `--threads N` | Verification concurrency | `--threads 60` |
+| `--timeout N` | Per-request timeout (seconds) | `--timeout 8` |
+| `--list-countries` | List supported country codes | `--list-countries` |
 
 ## Disclaimer
 This tool is for **educational purposes and security auditing only**. The author (Y0oshi) is not responsible for any misuse of this software.
