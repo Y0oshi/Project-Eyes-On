@@ -9,8 +9,8 @@
 
 ## Overview
 **Project Eyes On** is a multi-threaded reconnaissance tool designed to locate open IP cameras across the globe. It combines two engines:
-1.  **Directory Scraper**: Harvests feeds from Insecam.
-2.  **Deep Web Dorking**: Queries Yahoo, Bing, Mojeek and DuckDuckGo to find cameras not listed in public directories.
+1.  **Web Dorking**: Queries Yahoo, Bing, Mojeek and DuckDuckGo to find cameras not listed in public directories.
+2.  **Directory Scraper**: Harvests feeds from Insecam.
 
 ## Features
 -   **4 Search Engines**: Queries Yahoo, Bing, Mojeek and DuckDuckGo in parallel.
